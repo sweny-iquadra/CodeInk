@@ -6,6 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Upload, Pen, CloudUpload, Wand2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { PromptExamples } from "./prompt-examples";
+import { PromptTips } from "./prompt-tips";
 
 interface InputPanelProps {
   onGenerate: (data: { type: 'text' | 'image'; description?: string; additionalContext?: string; file?: File }) => void;
@@ -104,8 +106,15 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
     }
   };
 
+  const handleUsePrompt = (prompt: string) => {
+    setDescription(prompt);
+    setActiveTab("describe");
+  };
+
   return (
     <div className="space-y-6">
+      <PromptTips />
+      <PromptExamples onUsePrompt={handleUsePrompt} />
       <Card>
         <CardContent className="p-6">
           <h2 className="text-lg font-semibold text-slate-800 mb-4">Input Method</h2>
