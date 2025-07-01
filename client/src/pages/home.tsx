@@ -132,7 +132,7 @@ export default function Home() {
           <div className="text-center space-y-4">
             <h1 className="text-4xl lg:text-6xl font-bold text-foreground tracking-tight">
               Transform Ideas into
-              <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent"> Code</span>
+              <span className="bg-gradient-to-r from-primary to-purple-600 bg-clip-text text-transparent"> Code</span>
             </h1>
             <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
               Upload sketches, describe layouts, or share screenshots. Our AI instantly generates responsive HTML and Tailwind CSS code ready for production.

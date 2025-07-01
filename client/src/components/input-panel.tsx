@@ -147,7 +147,7 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
                 onClick={() => fileInputRef.current?.click()}
               >
                 <div className="space-y-6">
-                  <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-blue-100 rounded-2xl flex items-center justify-center mx-auto">
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-purple-100 rounded-2xl flex items-center justify-center mx-auto">
                     <CloudUpload className="text-primary w-8 h-8" />
                   </div>
                   <div>
@@ -206,7 +206,7 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
           </div>
 
           <Button 
-            className="w-full mt-8 h-14 text-lg font-semibold bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl" 
+            className="w-full mt-8 h-14 text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl" 
             onClick={handleGenerate}
             disabled={isLoading}
           >

@@ -8,7 +8,7 @@ export function Header() {
         <div className="flex justify-between items-center h-16">
           <div className="flex items-center space-x-8">
             <div className="flex items-center space-x-3">
-              <div className="w-9 h-9 bg-gradient-to-br from-primary to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-9 h-9 bg-gradient-to-br from-primary to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
                 <Sparkles className="text-white w-5 h-5" />
               </div>
               <div className="flex flex-col">
@@ -36,7 +36,7 @@ export function Header() {
             >
               <Moon className="h-4 w-4" />
             </Button>
-            <Button className="bg-gradient-to-r from-primary to-blue-600 text-primary-foreground hover:from-primary/90 hover:to-blue-600/90 shadow-lg transition-all duration-200 rounded-xl font-semibold">
+            <Button className="bg-gradient-to-r from-primary to-purple-600 text-primary-foreground hover:from-primary/90 hover:to-purple-600/90 shadow-lg transition-all duration-200 rounded-xl font-semibold">
               <Github className="w-4 h-4 mr-2" />
               Star on GitHub
             </Button>
