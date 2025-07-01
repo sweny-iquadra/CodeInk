@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -39,6 +39,54 @@ export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutI
   const [showImprovementDialog, setShowImprovementDialog] = useState(false);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { toast } = useToast();
+
+  // Handle iframe link clicks to prevent navigation away from Codink
+  useEffect(() => {
+    const iframe = iframeRef.current;
+    if (!iframe) return;
+
+    const handleIframeLoad = () => {
+      try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+        if (!iframeDoc) return;
+
+        // Prevent all links from navigating away
+        const links = iframeDoc.querySelectorAll('a');
+        links.forEach(link => {
+          link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const href = link.getAttribute('href');
+            if (href && href.startsWith('http')) {
+              // Open external links in new tab
+              window.open(href, '_blank');
+            }
+            // Ignore internal links to keep preview contained
+          });
+        });
+
+        // Prevent form submissions that could navigate away
+        const forms = iframeDoc.querySelectorAll('form');
+        forms.forEach(form => {
+          form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            toast({
+              title: "Form submission disabled",
+              description: "Forms are disabled in preview mode.",
+            });
+          });
+        });
+      } catch (error) {
+        // Silently handle cross-origin errors
+        console.log('Cross-origin iframe access blocked');
+      }
+    };
+
+    iframe.addEventListener('load', handleIframeLoad);
+    
+    return () => {
+      iframe.removeEventListener('load', handleIframeLoad);
+    };
+  }, [generatedCode, toast]);
 
   const explainMutation = useMutation({
     mutationFn: async (code: string) => {
@@ -282,6 +330,7 @@ export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutI
                     style={{ width: getPreviewWidth(), height: "100%" }}
                     srcDoc={generatedCode}
                     title="Preview"
+                    sandbox="allow-scripts allow-same-origin"
                   />
                 ) : (
                   <div className="flex items-center justify-center w-full text-slate-500">
