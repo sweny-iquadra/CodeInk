@@ -11,6 +11,8 @@ export interface IStorage {
   createLayout(layout: InsertLayout): Promise<GeneratedLayout>;
   getLayouts(limit?: number): Promise<GeneratedLayout[]>;
   getLayout(id: number): Promise<GeneratedLayout | undefined>;
+  getPublicLayouts(limit?: number): Promise<GeneratedLayout[]>;
+  updateLayoutVisibility(id: number, isPublic: boolean): Promise<GeneratedLayout | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -55,6 +57,25 @@ export class DatabaseStorage implements IStorage {
 
   async getLayout(id: number): Promise<GeneratedLayout | undefined> {
     const [layout] = await db.select().from(generatedLayouts).where(eq(generatedLayouts.id, id));
+    return layout || undefined;
+  }
+
+  async getPublicLayouts(limit = 10): Promise<GeneratedLayout[]> {
+    const layouts = await db
+      .select()
+      .from(generatedLayouts)
+      .where(eq(generatedLayouts.isPublic, true))
+      .orderBy(desc(generatedLayouts.createdAt))
+      .limit(limit);
+    return layouts;
+  }
+
+  async updateLayoutVisibility(id: number, isPublic: boolean): Promise<GeneratedLayout | undefined> {
+    const [layout] = await db
+      .update(generatedLayouts)
+      .set({ isPublic })
+      .where(eq(generatedLayouts.id, id))
+      .returning();
     return layout || undefined;
   }
 }

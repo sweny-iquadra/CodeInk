@@ -15,6 +15,7 @@ export const generatedLayouts = pgTable("generated_layouts", {
   inputMethod: text("input_method").notNull(), // 'upload' or 'describe'
   generatedCode: text("generated_code").notNull(),
   additionalContext: text("additional_context"),
+  isPublic: boolean("is_public").default(false).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 

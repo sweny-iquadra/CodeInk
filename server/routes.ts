@@ -92,6 +92,41 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get recent public layouts for gallery
+  app.get("/api/public-layouts", async (req, res) => {
+    try {
+      const limit = parseInt(req.query.limit as string) || 10;
+      const layouts = await storage.getPublicLayouts(limit);
+      res.json(layouts);
+    } catch (error) {
+      console.error("Error fetching public layouts:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  // Update layout visibility (make public/private)
+  app.patch("/api/layouts/:id/visibility", async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const { isPublic } = req.body;
+      
+      if (typeof isPublic !== 'boolean') {
+        return res.status(400).json({ message: "isPublic must be a boolean" });
+      }
+
+      const layout = await storage.updateLayoutVisibility(id, isPublic);
+      
+      if (!layout) {
+        return res.status(404).json({ message: "Layout not found" });
+      }
+
+      res.json(layout);
+    } catch (error) {
+      console.error("Error updating layout visibility:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   // Get specific layout
   app.get("/api/layouts/:id", async (req, res) => {
     try {

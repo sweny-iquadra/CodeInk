@@ -6,8 +6,11 @@ import { Footer } from "@/components/footer";
 import { InputPanel } from "@/components/input-panel";
 import { OutputPanel } from "@/components/output-panel";
 import { HistoryPanel } from "@/components/history-panel";
+import { Gallery } from "@/components/gallery";
 import { LoadingModal } from "@/components/loading-modal";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
+import { Home as HomeIcon, Image } from "lucide-react";
 import type { GeneratedLayout } from "@shared/schema";
 
 interface GenerationResult {
@@ -149,21 +152,53 @@ export default function Home() {
       </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-4 space-y-8">
-            <InputPanel onGenerate={handleGenerate} isLoading={isLoading} />
-            <HistoryPanel onSelectLayout={handleSelectLayout} />
-          </div>
+        <Tabs defaultValue="create" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsTrigger value="create" className="flex items-center space-x-2">
+              <HomeIcon className="w-4 h-4" />
+              <span>Create</span>
+            </TabsTrigger>
+            <TabsTrigger value="gallery" className="flex items-center space-x-2">
+              <Image className="w-4 h-4" />
+              <span>Gallery</span>
+            </TabsTrigger>
+          </TabsList>
           
-          <div className="lg:col-span-8">
-            <OutputPanel 
-              generatedCode={currentCode}
-              title={currentTitle}
-              isReady={isReady}
-              onLayoutImproved={handleLayoutImproved}
-            />
-          </div>
-        </div>
+          <TabsContent value="create">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-4 space-y-8">
+                <InputPanel onGenerate={handleGenerate} isLoading={isLoading} />
+                <HistoryPanel onSelectLayout={handleSelectLayout} />
+              </div>
+              
+              <div className="lg:col-span-8">
+                <OutputPanel 
+                  generatedCode={currentCode}
+                  title={currentTitle}
+                  isReady={isReady}
+                  onLayoutImproved={handleLayoutImproved}
+                />
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="gallery">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-4">
+                <Gallery onSelectLayout={handleSelectLayout} />
+              </div>
+              
+              <div className="lg:col-span-8">
+                <OutputPanel 
+                  generatedCode={currentCode}
+                  title={currentTitle}
+                  isReady={isReady}
+                  onLayoutImproved={handleLayoutImproved}
+                />
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <Footer />

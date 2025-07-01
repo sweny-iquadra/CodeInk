@@ -60,6 +60,11 @@ export function PromptExamples({ onUsePrompt }: PromptExamplesProps) {
   const [isOpen, setIsOpen] = useState(false);
   const { toast } = useToast();
 
+  const handleUsePrompt = (prompt: string) => {
+    onUsePrompt(prompt);
+    setIsOpen(false); // Close dropdown after using a prompt
+  };
+
   const handleCopyPrompt = async (prompt: string) => {
     try {
       await navigator.clipboard.writeText(prompt);
@@ -128,7 +133,7 @@ export function PromptExamples({ onUsePrompt }: PromptExamplesProps) {
                                 variant="ghost"
                                 size="sm"
                                 className="h-6 px-2 text-xs text-blue-600"
-                                onClick={() => onUsePrompt(example.prompt)}
+                                onClick={() => handleUsePrompt(example.prompt)}
                               >
                                 Use
                               </Button>

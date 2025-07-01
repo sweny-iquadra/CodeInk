@@ -108,6 +108,10 @@ The application follows a monorepo structure with clear separation between clien
 - July 01, 2025. Replaced in-memory storage with DatabaseStorage for real-time layout history
 - July 01, 2025. Removed prompt tips screenshot component for cleaner interface
 - July 01, 2025. Added real-time updates to Recent Generations with auto-refresh every 5 seconds
+- July 01, 2025. Fixed sample prompts dropdown to auto-close when "Use" button is clicked
+- July 01, 2025. Added Gallery tab with "Recent Public Generations" feature for community layouts
+- July 01, 2025. Extended database schema with isPublic field to support public/private layout sharing
+- July 01, 2025. Created tab-based navigation system switching between Create and Gallery modes
 
 ## User Preferences
 
