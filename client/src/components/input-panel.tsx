@@ -7,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Upload, Pen, CloudUpload, Wand2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PromptExamples } from "./prompt-examples";
-import { PromptTips } from "./prompt-tips";
 
 interface InputPanelProps {
   onGenerate: (data: { type: 'text' | 'image'; description?: string; additionalContext?: string; file?: File }) => void;
@@ -113,7 +112,6 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
 
   return (
     <div className="space-y-6">
-      <PromptTips />
       <PromptExamples onUsePrompt={handleUsePrompt} />
       <Card className="border-2 shadow-lg bg-card/50 backdrop-blur-sm">
         <CardContent className="p-8">

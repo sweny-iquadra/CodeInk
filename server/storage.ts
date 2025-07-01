@@ -1,4 +1,6 @@
 import { users, generatedLayouts, type User, type InsertUser, type GeneratedLayout, type InsertLayout } from "@shared/schema";
+import { db } from "./db";
+import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
@@ -11,57 +13,50 @@ export interface IStorage {
   getLayout(id: number): Promise<GeneratedLayout | undefined>;
 }
 
-export class MemStorage implements IStorage {
-  private users: Map<number, User>;
-  private layouts: Map<number, GeneratedLayout>;
-  private currentUserId: number;
-  private currentLayoutId: number;
-
-  constructor() {
-    this.users = new Map();
-    this.layouts = new Map();
-    this.currentUserId = 1;
-    this.currentLayoutId = 1;
-  }
-
+export class DatabaseStorage implements IStorage {
   async getUser(id: number): Promise<User | undefined> {
-    return this.users.get(id);
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      (user) => user.username === username,
-    );
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = this.currentUserId++;
-    const user: User = { ...insertUser, id };
-    this.users.set(id, user);
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
     return user;
   }
 
   async createLayout(insertLayout: InsertLayout): Promise<GeneratedLayout> {
-    const id = this.currentLayoutId++;
-    const layout: GeneratedLayout = {
-      ...insertLayout,
-      id,
-      createdAt: new Date(),
-    };
-    this.layouts.set(id, layout);
+    const [layout] = await db
+      .insert(generatedLayouts)
+      .values({
+        ...insertLayout,
+        description: insertLayout.description || null,
+        additionalContext: insertLayout.additionalContext || null,
+      })
+      .returning();
     return layout;
   }
 
   async getLayouts(limit = 10): Promise<GeneratedLayout[]> {
-    const layouts = Array.from(this.layouts.values())
-      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
-      .slice(0, limit);
+    const layouts = await db
+      .select()
+      .from(generatedLayouts)
+      .orderBy(desc(generatedLayouts.createdAt))
+      .limit(limit);
     return layouts;
   }
 
   async getLayout(id: number): Promise<GeneratedLayout | undefined> {
-    return this.layouts.get(id);
+    const [layout] = await db.select().from(generatedLayouts).where(eq(generatedLayouts.id, id));
+    return layout || undefined;
   }
 }
 
-export const storage = new MemStorage();
+export const storage = new DatabaseStorage();

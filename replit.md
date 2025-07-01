@@ -104,6 +104,10 @@ The application follows a monorepo structure with clear separation between clien
 - July 01, 2025. Added full feature set: file upload, live preview, code explanation, layout improvement, and history tracking
 - July 01, 2025. Updated color scheme to modern purple/violet theme for professional developer tool aesthetic
 - July 01, 2025. Removed wireframe tab from output panel, keeping only Code and Preview tabs for cleaner interface
+- July 01, 2025. Integrated PostgreSQL database with Drizzle ORM for persistent data storage
+- July 01, 2025. Replaced in-memory storage with DatabaseStorage for real-time layout history
+- July 01, 2025. Removed prompt tips screenshot component for cleaner interface
+- July 01, 2025. Added real-time updates to Recent Generations with auto-refresh every 5 seconds
 
 ## User Preferences
 

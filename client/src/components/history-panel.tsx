@@ -10,7 +10,8 @@ interface HistoryPanelProps {
 
 export function HistoryPanel({ onSelectLayout }: HistoryPanelProps) {
   const { data: layouts = [], isLoading } = useQuery<GeneratedLayout[]>({
-    queryKey: ["/api/layouts?limit=3"],
+    queryKey: ["/api/layouts"],
+    refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
   });
 
   if (isLoading) {
