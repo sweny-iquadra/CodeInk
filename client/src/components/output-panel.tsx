@@ -27,9 +27,10 @@ interface OutputPanelProps {
   generatedCode?: string;
   title?: string;
   isReady: boolean;
+  onLayoutImproved?: (improvedLayout: { html: string; title: string; description: string }) => void;
 }
 
-export function OutputPanel({ generatedCode = "", title = "", isReady }: OutputPanelProps) {
+export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutImproved }: OutputPanelProps) {
   const [activeView, setActiveView] = useState("code");
   const [previewDevice, setPreviewDevice] = useState("desktop");
   const [showExplanation, setShowExplanation] = useState(false);
@@ -67,8 +68,16 @@ export function OutputPanel({ generatedCode = "", title = "", isReady }: OutputP
         title: "Layout improved!",
         description: "Your layout has been enhanced with AI suggestions.",
       });
-      // You would typically update the parent component's state here
-      window.location.reload(); // Temporary solution
+      setShowImprovementDialog(false);
+      setImprovementFeedback("");
+      // Call the callback to update the parent component's state
+      if (onLayoutImproved) {
+        onLayoutImproved({
+          html: data.html,
+          title: data.title,
+          description: data.description
+        });
+      }
     },
     onError: (error) => {
       toast({
@@ -132,8 +141,6 @@ export function OutputPanel({ generatedCode = "", title = "", isReady }: OutputP
 
   const submitImprovement = () => {
     improveMutation.mutate({ code: generatedCode, feedback: improvementFeedback });
-    setShowImprovementDialog(false);
-    setImprovementFeedback("");
   };
 
   const getPreviewWidth = () => {

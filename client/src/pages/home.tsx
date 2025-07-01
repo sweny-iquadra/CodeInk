@@ -120,6 +120,13 @@ export default function Home() {
     });
   };
 
+  const handleLayoutImproved = (improvedLayout: { html: string; title: string; description: string }) => {
+    setCurrentCode(improvedLayout.html);
+    setCurrentTitle(improvedLayout.title);
+    setIsReady(true);
+    queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
+  };
+
   const isLoading = generateFromTextMutation.isPending || generateFromImageMutation.isPending;
 
   return (
@@ -153,6 +160,7 @@ export default function Home() {
               generatedCode={currentCode}
               title={currentTitle}
               isReady={isReady}
+              onLayoutImproved={handleLayoutImproved}
             />
           </div>
         </div>
