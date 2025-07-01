@@ -1,4 +1,4 @@
-import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 
 interface LoadingModalProps {
@@ -10,6 +10,10 @@ export function LoadingModal({ open, progress = 65 }: LoadingModalProps) {
   return (
     <Dialog open={open}>
       <DialogContent className="max-w-lg mx-4 p-10 border-2 bg-background/95 backdrop-blur-md shadow-2xl">
+        <DialogHeader>
+          <DialogTitle className="sr-only">Generating Code</DialogTitle>
+          <DialogDescription className="sr-only">Please wait while we generate your layout code</DialogDescription>
+        </DialogHeader>
         <div className="text-center">
           <div className="w-20 h-20 bg-gradient-to-br from-primary/10 to-purple-100 rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg">
             <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>

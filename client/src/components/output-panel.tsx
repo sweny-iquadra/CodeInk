@@ -8,7 +8,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { 
   Code, 
   Eye, 
-  Table, 
   Copy, 
   Download, 
   ExternalLink, 
@@ -148,36 +147,7 @@ export function OutputPanel({ generatedCode = "", title = "", isReady }: OutputP
     }
   };
 
-  const renderWireframe = () => {
-    if (!generatedCode) return null;
 
-    return (
-      <div className="p-8 bg-slate-50 min-h-[600px]">
-        <div className="space-y-4">
-          <div className="h-16 bg-slate-300 rounded border-2 border-dashed border-slate-400 flex items-center px-4">
-            <span className="text-slate-600 font-medium">Header Navigation</span>
-          </div>
-          <div className="h-64 bg-slate-200 rounded border-2 border-dashed border-slate-400 flex items-center justify-center">
-            <span className="text-slate-600 font-medium">Hero Section</span>
-          </div>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="h-32 bg-slate-200 rounded border-2 border-dashed border-slate-400 flex items-center justify-center">
-              <span className="text-slate-600 text-sm">Feature 1</span>
-            </div>
-            <div className="h-32 bg-slate-200 rounded border-2 border-dashed border-slate-400 flex items-center justify-center">
-              <span className="text-slate-600 text-sm">Feature 2</span>
-            </div>
-            <div className="h-32 bg-slate-200 rounded border-2 border-dashed border-slate-400 flex items-center justify-center">
-              <span className="text-slate-600 text-sm">Feature 3</span>
-            </div>
-          </div>
-          <div className="h-16 bg-slate-300 rounded border-2 border-dashed border-slate-400 flex items-center px-4">
-            <span className="text-slate-600 font-medium">Footer</span>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   return (
     <>
@@ -200,10 +170,6 @@ export function OutputPanel({ generatedCode = "", title = "", isReady }: OutputP
                 <TabsTrigger value="preview" className="flex items-center gap-2">
                   <Eye className="w-4 h-4" />
                   Preview
-                </TabsTrigger>
-                <TabsTrigger value="wireframe" className="flex items-center gap-2">
-                  <Table className="w-4 h-4" />
-                  Wireframe
                 </TabsTrigger>
               </TabsList>
             </Tabs>
@@ -322,19 +288,7 @@ export function OutputPanel({ generatedCode = "", title = "", isReady }: OutputP
               </div>
             </TabsContent>
             
-            <TabsContent value="wireframe" className="m-0">
-              {generatedCode ? (
-                renderWireframe()
-              ) : (
-                <div className="flex items-center justify-center h-[600px] text-slate-500">
-                  <div className="text-center">
-                    <Table className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                    <p>No wireframe available</p>
-                    <p className="text-sm mt-1">Generate code to see the wireframe</p>
-                  </div>
-                </div>
-              )}
-            </TabsContent>
+
           </Tabs>
         </div>
 
