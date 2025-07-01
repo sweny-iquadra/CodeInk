@@ -4,11 +4,11 @@ import { Lightbulb, Target, Palette, Layout, Smartphone } from "lucide-react";
 
 export function PromptTips() {
   return (
-    <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
-      <CardContent className="p-4">
-        <div className="flex items-center space-x-2 mb-3">
-          <Lightbulb className="w-4 h-4 text-yellow-500" />
-          <h3 className="font-semibold text-slate-800 text-sm">Prompt Writing Guide</h3>
+    <Card className="bg-gradient-to-r from-primary/5 to-blue-50 border-primary/20 shadow-lg">
+      <CardContent className="p-6">
+        <div className="flex items-center space-x-3 mb-4">
+          <Lightbulb className="w-5 h-5 text-yellow-500" />
+          <h3 className="font-bold text-foreground text-lg">Prompt Writing Guide</h3>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">

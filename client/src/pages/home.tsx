@@ -123,12 +123,27 @@ export default function Home() {
   const isLoading = generateFromTextMutation.isPending || generateFromImageMutation.isPending;
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
       <Header />
       
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      {/* Hero Section */}
+      <div className="border-b border-border bg-gradient-to-r from-background to-muted/50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="text-center space-y-4">
+            <h1 className="text-4xl lg:text-6xl font-bold text-foreground tracking-tight">
+              Transform Ideas into
+              <span className="bg-gradient-to-r from-primary to-blue-600 bg-clip-text text-transparent"> Code</span>
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Upload sketches, describe layouts, or share screenshots. Our AI instantly generates responsive HTML and Tailwind CSS code ready for production.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <div className="lg:col-span-4 space-y-6">
+          <div className="lg:col-span-4 space-y-8">
             <InputPanel onGenerate={handleGenerate} isLoading={isLoading} />
             <HistoryPanel onSelectLayout={handleSelectLayout} />
           </div>

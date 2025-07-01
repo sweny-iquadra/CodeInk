@@ -181,13 +181,13 @@ export function OutputPanel({ generatedCode = "", title = "", isReady }: OutputP
 
   return (
     <>
-      <Card className="overflow-hidden">
-        <div className="border-b border-slate-200 p-4">
+      <Card className="overflow-hidden border-2 shadow-lg bg-card/50 backdrop-blur-sm">
+        <div className="border-b border-border p-6 bg-gradient-to-r from-background to-muted/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
-              <h2 className="text-lg font-semibold text-slate-800">Generated Code</h2>
-              <Badge variant={isReady ? "default" : "secondary"} className="bg-green-100 text-green-800">
-                <CheckCircle className="w-3 h-3 mr-1" />
+              <h2 className="text-2xl font-bold text-foreground">Generated Code</h2>
+              <Badge variant={isReady ? "default" : "secondary"} className={`px-3 py-1 rounded-full font-semibold ${isReady ? "bg-green-100 text-green-800 border-green-200" : "bg-muted text-muted-foreground"}`}>
+                <CheckCircle className="w-3 h-3 mr-2" />
                 {isReady ? "Ready" : "No Output"}
               </Badge>
             </div>

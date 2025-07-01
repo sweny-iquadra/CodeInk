@@ -115,30 +115,30 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
     <div className="space-y-6">
       <PromptTips />
       <PromptExamples onUsePrompt={handleUsePrompt} />
-      <Card>
-        <CardContent className="p-6">
-          <h2 className="text-lg font-semibold text-slate-800 mb-4">Input Method</h2>
+      <Card className="border-2 shadow-lg bg-card/50 backdrop-blur-sm">
+        <CardContent className="p-8">
+          <h2 className="text-2xl font-bold text-foreground mb-6">Create Your Layout</h2>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="upload" className="flex items-center gap-2">
+            <TabsList className="grid w-full grid-cols-2 bg-muted/50 p-1 rounded-xl">
+              <TabsTrigger value="upload" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
                 <Upload className="w-4 h-4" />
-                Upload
+                Upload Image
               </TabsTrigger>
-              <TabsTrigger value="describe" className="flex items-center gap-2">
+              <TabsTrigger value="describe" className="flex items-center gap-2 rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm transition-all">
                 <Pen className="w-4 h-4" />
-                Describe
+                Describe Layout
               </TabsTrigger>
             </TabsList>
             
-            <TabsContent value="upload" className="mt-6">
+            <TabsContent value="upload" className="mt-8">
               <div
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors cursor-pointer ${
+                className={`border-2 border-dashed rounded-2xl p-12 text-center transition-all duration-200 cursor-pointer ${
                   dragActive
-                    ? "border-blue-400 bg-blue-50"
+                    ? "border-primary bg-primary/5 scale-[1.02]"
                     : selectedFile
-                    ? "border-green-400 bg-green-50"
-                    : "border-slate-300 hover:border-blue-400"
+                    ? "border-green-500 bg-green-50 shadow-lg"
+                    : "border-border hover:border-primary hover:bg-primary/5"
                 }`}
                 onDragEnter={handleDrag}
                 onDragLeave={handleDrag}
@@ -146,22 +146,22 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
               >
-                <div className="space-y-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                    <CloudUpload className="text-blue-600 text-xl w-6 h-6" />
+                <div className="space-y-6">
+                  <div className="w-16 h-16 bg-gradient-to-br from-primary/10 to-blue-100 rounded-2xl flex items-center justify-center mx-auto">
+                    <CloudUpload className="text-primary w-8 h-8" />
                   </div>
                   <div>
                     {selectedFile ? (
                       <>
-                        <p className="text-slate-600 font-medium">File selected: {selectedFile.name}</p>
-                        <p className="text-sm text-slate-400 mt-1">Click to select a different file</p>
+                        <p className="text-foreground font-semibold text-lg">File selected: {selectedFile.name}</p>
+                        <p className="text-sm text-muted-foreground mt-2">Click to select a different file</p>
                       </>
                     ) : (
                       <>
-                        <p className="text-slate-600 font-medium">
-                          Drop your files here, or <span className="text-blue-600">browse</span>
+                        <p className="text-foreground font-semibold text-lg">
+                          Drop your files here, or <span className="text-primary font-bold">browse</span>
                         </p>
-                        <p className="text-sm text-slate-400 mt-1">Supports: JPG, PNG, PDF sketches</p>
+                        <p className="text-sm text-muted-foreground mt-2 font-medium">Supports: JPG, PNG, PDF sketches</p>
                       </>
                     )}
                   </div>
@@ -176,15 +176,15 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
               </div>
             </TabsContent>
             
-            <TabsContent value="describe" className="mt-6">
-              <div className="space-y-4">
+            <TabsContent value="describe" className="mt-8">
+              <div className="space-y-6">
                 <div>
-                  <Label htmlFor="description">Layout Description</Label>
+                  <Label htmlFor="description" className="text-base font-semibold text-foreground">Layout Description</Label>
                   <Textarea
                     id="description"
-                    className="mt-2 resize-none"
-                    rows={4}
-                    placeholder="Describe your layout: 'A header with navigation, hero section with centered text and button, three-column feature grid...'"
+                    className="mt-3 resize-none border-2 rounded-xl text-base min-h-[120px] focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    rows={5}
+                    placeholder="Describe your layout: 'A modern SaaS landing page with header navigation, hero section with centered text and call-to-action button, three-column feature grid with icons...'"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                   />
@@ -193,25 +193,25 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
             </TabsContent>
           </Tabs>
 
-          <div className="mt-6">
-            <Label htmlFor="additionalContext">Additional Context (Optional)</Label>
+          <div className="mt-8">
+            <Label htmlFor="additionalContext" className="text-base font-semibold text-foreground">Additional Context <span className="text-muted-foreground font-normal">(Optional)</span></Label>
             <Textarea
               id="additionalContext"
-              className="mt-2 resize-none"
+              className="mt-3 resize-none border-2 rounded-xl text-base focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
               rows={3}
-              placeholder="Any specific requirements, brand colors, or functionality notes..."
+              placeholder="Any specific requirements, brand colors, target audience, or functionality notes..."
               value={additionalContext}
               onChange={(e) => setAdditionalContext(e.target.value)}
             />
           </div>
 
           <Button 
-            className="w-full mt-6" 
+            className="w-full mt-8 h-14 text-lg font-semibold bg-gradient-to-r from-primary to-blue-600 hover:from-primary/90 hover:to-blue-600/90 shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl" 
             onClick={handleGenerate}
             disabled={isLoading}
           >
-            <Wand2 className="w-4 h-4 mr-2" />
-            {isLoading ? "Generating..." : "Generate Code"}
+            <Wand2 className="w-5 h-5 mr-3" />
+            {isLoading ? "Generating Your Code..." : "Generate Code"}
           </Button>
         </CardContent>
       </Card>

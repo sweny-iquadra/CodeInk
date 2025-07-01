@@ -32,11 +32,11 @@ export function HistoryPanel({ onSelectLayout }: HistoryPanelProps) {
   }
 
   return (
-    <Card>
+    <Card className="border-2 shadow-lg bg-card/50 backdrop-blur-sm">
       <CardContent className="p-6">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-semibold text-slate-800">Recent Generations</h3>
-          <span className="text-xs text-slate-500">Last 3</span>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-foreground">Recent Generations</h3>
+          <span className="text-sm text-muted-foreground font-medium px-3 py-1 bg-muted rounded-full">Last 3</span>
         </div>
         
         <div className="space-y-3">
@@ -49,19 +49,19 @@ export function HistoryPanel({ onSelectLayout }: HistoryPanelProps) {
             layouts.map((layout) => (
               <div
                 key={layout.id}
-                className="p-3 border border-slate-200 rounded-lg hover:bg-slate-50 cursor-pointer transition-colors"
+                className="p-4 border-2 border-border rounded-xl hover:border-primary hover:bg-primary/5 cursor-pointer transition-all duration-200 group"
                 onClick={() => onSelectLayout(layout)}
               >
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-800 truncate">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-foreground truncate group-hover:text-primary transition-colors">
                       {layout.title}
                     </p>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-xs text-muted-foreground font-medium mt-1">
                       {formatDistanceToNow(new Date(layout.createdAt), { addSuffix: true })}
                     </p>
                   </div>
-                  <ChevronRight className="text-slate-400 w-4 h-4" />
+                  <ChevronRight className="text-muted-foreground group-hover:text-primary w-4 h-4 transition-colors" />
                 </div>
               </div>
             ))
