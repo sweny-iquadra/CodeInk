@@ -112,6 +112,8 @@ The application follows a monorepo structure with clear separation between clien
 - July 01, 2025. Added Gallery tab with "Recent Public Generations" feature for community layouts
 - July 01, 2025. Extended database schema with isPublic field to support public/private layout sharing
 - July 01, 2025. Created tab-based navigation system switching between Create and Gallery modes
+- July 01, 2025. Cleaned up header navigation by removing Gallery and Docs links
+- July 01, 2025. Renamed "Generator" to "AI Layout Builder" for clearer branding
 
 ## User Preferences
 

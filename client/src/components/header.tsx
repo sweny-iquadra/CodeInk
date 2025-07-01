@@ -18,13 +18,7 @@ export function Header() {
             </div>
             <nav className="hidden md:flex space-x-8">
               <a href="#" className="text-primary font-semibold border-b-2 border-primary pb-4 -mb-px transition-colors">
-                Generator
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground pb-4 transition-colors font-medium">
-                Gallery
-              </a>
-              <a href="#" className="text-muted-foreground hover:text-foreground pb-4 transition-colors font-medium">
-                Docs
+                AI Layout Builder
               </a>
             </nav>
           </div>
