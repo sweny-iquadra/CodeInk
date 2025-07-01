@@ -99,7 +99,9 @@ The application follows a monorepo structure with clear separation between clien
 - Connection pooling via Neon serverless driver
 
 ## Changelog
-- July 01, 2025. Initial setup
+- July 01, 2025. Initial setup and complete implementation of Codink AI-powered UI code generator
+- July 01, 2025. Successfully integrated OpenAI GPT-4o for text-to-code and image-to-code generation
+- July 01, 2025. Added full feature set: file upload, live preview, code explanation, layout improvement, and history tracking
 
 ## User Preferences
 
