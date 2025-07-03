@@ -28,10 +28,22 @@ interface OutputPanelProps {
   title?: string;
   isReady: boolean;
   onLayoutImproved?: (improvedLayout: { html: string; title: string; description: string }) => void;
+  activeTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
-export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutImproved }: OutputPanelProps) {
+export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutImproved, activeTab, onTabChange }: OutputPanelProps) {
   const [activeView, setActiveView] = useState("code");
+  
+  // Use external activeTab if provided, otherwise use internal state
+  const currentTab = activeTab || activeView;
+  const handleTabChange = (tab: string) => {
+    if (onTabChange) {
+      onTabChange(tab);
+    } else {
+      setActiveView(tab);
+    }
+  };
   const [previewDevice, setPreviewDevice] = useState("desktop");
   const [showExplanation, setShowExplanation] = useState(false);
   const [explanation, setExplanation] = useState("");
@@ -216,7 +228,7 @@ export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutI
                 {isReady ? "Ready" : "No Output"}
               </Badge>
             </div>
-            <Tabs value={activeView} onValueChange={setActiveView}>
+            <Tabs value={currentTab} onValueChange={handleTabChange}>
               <TabsList>
                 <TabsTrigger value="code" className="flex items-center gap-2">
                   <Code className="w-4 h-4" />
@@ -232,7 +244,7 @@ export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutI
         </div>
 
         <div className="relative">
-          <Tabs value={activeView} onValueChange={setActiveView}>
+          <Tabs value={currentTab} onValueChange={handleTabChange}>
             <TabsContent value="code" className="m-0">
               <div className="flex items-center justify-between bg-slate-900 px-4 py-2">
                 <div className="flex items-center space-x-4">

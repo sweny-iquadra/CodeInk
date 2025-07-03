@@ -36,12 +36,14 @@ interface DesignAssistantProps {
   currentCode?: string;
   onCodeGenerate?: (description: string, additionalContext?: string) => void;
   onCodeImprove?: (feedback: string) => void;
+  onSwitchToPreview?: () => void;
 }
 
 export function DesignAssistant({ 
   currentCode, 
   onCodeGenerate, 
-  onCodeImprove 
+  onCodeImprove,
+  onSwitchToPreview
 }: DesignAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -192,6 +194,10 @@ export function DesignAssistant({
       case 'generate':
         if (onCodeGenerate && actionData?.description) {
           onCodeGenerate(actionData.description, actionData.additionalContext);
+          // Switch to preview mode for live preview
+          if (onSwitchToPreview) {
+            setTimeout(() => onSwitchToPreview(), 100);
+          }
           toast({
             title: "🎨 Generating Layout",
             description: "Creating your layout based on our conversation..."
@@ -379,9 +385,11 @@ export function DesignAssistant({
                           variant="outline"
                           size="sm"
                           onClick={() => handleSuggestionClick(suggestion)}
-                          className="w-full text-left justify-start text-xs h-auto p-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                          className="w-full text-left justify-start text-xs h-auto p-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-normal break-words"
                         >
-                          {suggestion}
+                          <span className="block w-full text-left leading-relaxed">
+                            {suggestion}
+                          </span>
                         </Button>
                       ))}
                     </div>

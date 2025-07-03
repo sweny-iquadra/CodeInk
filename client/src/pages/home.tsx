@@ -26,6 +26,7 @@ export default function Home() {
   const [currentTitle, setCurrentTitle] = useState("");
   const [isReady, setIsReady] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [outputTab, setOutputTab] = useState("code");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -44,6 +45,7 @@ export default function Home() {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
       setIsReady(true);
+      setOutputTab("preview"); // Auto-switch to preview for live preview
       setAbortController(null);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({
@@ -97,6 +99,7 @@ export default function Home() {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
       setIsReady(true);
+      setOutputTab("preview"); // Auto-switch to preview for live preview
       setAbortController(null);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({
@@ -136,6 +139,7 @@ export default function Home() {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
       setIsReady(true);
+      setOutputTab("preview"); // Auto-switch to preview for live preview
       setAbortController(null);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({
@@ -264,6 +268,8 @@ export default function Home() {
                   title={currentTitle}
                   isReady={isReady}
                   onLayoutImproved={handleLayoutImproved}
+                  activeTab={outputTab}
+                  onTabChange={setOutputTab}
                 />
               </div>
             </div>
@@ -281,6 +287,8 @@ export default function Home() {
                   title={currentTitle}
                   isReady={isReady}
                   onLayoutImproved={handleLayoutImproved}
+                  activeTab={outputTab}
+                  onTabChange={setOutputTab}
                 />
               </div>
             </div>
@@ -297,6 +305,7 @@ export default function Home() {
         currentCode={currentCode}
         onCodeGenerate={handleAssistantCodeGenerate}
         onCodeImprove={handleAssistantCodeImprove}
+        onSwitchToPreview={() => setOutputTab("preview")}
       />
     </div>
   );

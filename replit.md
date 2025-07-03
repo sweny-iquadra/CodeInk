@@ -172,6 +172,12 @@ Preferred communication style: Simple, everyday language.
   * Simplified system prompts to ensure valid JSON format from AI responses
   * Implemented content cleaning to remove control characters that break JSON parsing
   * CodeGenie chatbot now responds reliably in ~5-6 seconds with proper suggestions
+- July 03, 2025. Enhanced user experience with comprehensive UI improvements:
+  * Fixed chatbot suggestion text overflow with proper text wrapping and line breaks
+  * Added live preview functionality - automatically switches to preview tab when CodeGenie generates layouts
+  * Cleaned up loading modal by removing explicit time display and cancel button text
+  * Users can now cancel generation only via the top-right X button for cleaner interface
+  * Integrated real-time preview switching across all code generation methods (text, image, improvement, chatbot)
 
 ## User Preferences
 
