@@ -147,6 +147,11 @@ Preferred communication style: Simple, everyday language.
   * Login and register forms with validation and error handling
   * Protected routes and user profile management in header
   * Token storage in localStorage with automatic API request authentication
+- July 03, 2025. Repositioned AI Design Assistant as floating chat widget "CodeGenie" in bottom-right corner:
+  * Transformed full-panel chatbot into compact floating icon with click-to-expand functionality
+  * Updated branding from "AI Design Assistant" to "CodeGenie" for innovative, short naming
+  * Added animated chat icon with online status indicator and hover tooltip
+  * Maintained all interactive features: layout generation, design feedback, framework recommendations
 
 ## User Preferences
 

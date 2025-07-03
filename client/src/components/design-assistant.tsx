@@ -17,7 +17,9 @@ import {
   Code, 
   Sparkles,
   Loader2,
-  MessageSquare
+  MessageSquare,
+  X,
+  Minimize2
 } from "lucide-react";
 
 interface Message {
@@ -41,10 +43,11 @@ export function DesignAssistant({
   onCodeGenerate, 
   onCodeImprove 
 }: DesignAssistantProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
-      content: "Hi! I'm your AI Design Assistant. I can instantly create layouts, provide design feedback, and recommend frameworks. Just describe what you want to build and I'll generate it immediately!",
+      content: "Hi! I'm CodeGenie, your AI design companion. I can instantly create layouts, provide design feedback, and recommend frameworks. Just describe what you want to build and I'll generate it immediately!",
       sender: "assistant",
       timestamp: new Date(),
       suggestions: [
@@ -246,45 +249,26 @@ export function DesignAssistant({
     }
   }, [messages]);
 
-  if (!isExpanded) {
+  // Chat icon button when not open
+  if (!isOpen) {
     return (
-      <Card className="fixed bottom-6 right-6 w-80 shadow-lg border-2 border-violet-200 dark:border-violet-800">
-        <CardHeader className="pb-3 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950 dark:to-purple-950">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="relative">
-                <Bot className="h-6 w-6 text-violet-600 dark:text-violet-400" />
-                <Sparkles className="h-3 w-3 text-yellow-500 absolute -top-1 -right-1" />
-              </div>
-              <CardTitle className="text-lg text-violet-900 dark:text-violet-100">AI Design Assistant</CardTitle>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setIsExpanded(true)}
-              className="text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-200"
-            >
-              <MessageSquare className="h-4 w-4" />
-            </Button>
+      <div className="fixed bottom-6 right-6 z-50">
+        <Button
+          onClick={() => setIsOpen(true)}
+          className="h-14 w-14 rounded-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 group"
+        >
+          <div className="relative">
+            <MessageSquare className="h-6 w-6" />
+            <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full animate-pulse" />
           </div>
-        </CardHeader>
-        <CardContent className="p-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-            Get instant help with layout design, framework recommendations, and real-time feedback.
-          </p>
-          <div className="flex flex-wrap gap-2 mb-3">
-            <Badge variant="secondary" className="text-xs">Interactive Generation</Badge>
-            <Badge variant="secondary" className="text-xs">Design Feedback</Badge>
-            <Badge variant="secondary" className="text-xs">Framework Tips</Badge>
+        </Button>
+        {/* Tooltip */}
+        <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
+            CodeGenie - AI Helper
           </div>
-          <Button 
-            onClick={() => setIsExpanded(true)} 
-            className="w-full bg-violet-600 hover:bg-violet-700 text-white"
-          >
-            Start Chatting
-          </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
@@ -297,7 +281,7 @@ export function DesignAssistant({
               <Bot className="h-6 w-6 text-violet-600 dark:text-violet-400" />
               <Sparkles className="h-3 w-3 text-yellow-500 absolute -top-1 -right-1" />
             </div>
-            <CardTitle className="text-lg text-violet-900 dark:text-violet-100">AI Design Assistant</CardTitle>
+            <CardTitle className="text-lg text-violet-900 dark:text-violet-100">CodeGenie</CardTitle>
           </div>
           <div className="flex space-x-1">
             {currentCode && (
@@ -319,10 +303,10 @@ export function DesignAssistant({
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => setIsExpanded(false)}
+              onClick={() => setIsOpen(false)}
               className="text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-200"
             >
-              ×
+              <X className="h-4 w-4" />
             </Button>
           </div>
         </div>
