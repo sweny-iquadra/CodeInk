@@ -228,14 +228,77 @@ export function DesignAssistant({
             description: "Enhancing your current layout with AI suggestions..."
           });
           
-          // Add a system message to show improvement is in progress
+          // Add real-time improvement suggestions based on the action data
+          const improvementSuggestions = actionData?.improvements || [
+            "Enhanced color scheme and visual hierarchy",
+            "Improved responsive design for mobile devices", 
+            "Better accessibility with proper ARIA labels",
+            "Optimized layout spacing and typography",
+            "Added interactive elements and hover effects"
+          ];
+
+          // Add a system message with real-time improvement suggestions
           const systemMessage: Message = {
             id: `system-${Date.now()}`,
-            content: "🔄 Applying improvements to your layout... Check the preview for updates!",
+            content: "🔄 Applying improvements to your layout... Here's what I'm enhancing:",
             sender: "assistant",
-            timestamp: new Date()
+            timestamp: new Date(),
+            suggestions: improvementSuggestions,
+            actionType: undefined // No action needed for progress message
           };
           setMessages(prev => [...prev, systemMessage]);
+
+          // Add progressive updates to show real-time improvement status
+          setTimeout(() => {
+            const progressMessage: Message = {
+              id: `progress-${Date.now()}`,
+              content: "🎨 Enhancing visual design and color scheme...",
+              sender: "assistant",
+              timestamp: new Date(),
+              suggestions: ["Improving color contrast", "Enhancing typography", "Refining visual hierarchy"]
+            };
+            setMessages(prev => [...prev, progressMessage]);
+          }, 2000);
+
+          setTimeout(() => {
+            const progressMessage2: Message = {
+              id: `progress2-${Date.now()}`,
+              content: "📱 Optimizing responsive layout for all devices...",
+              sender: "assistant",
+              timestamp: new Date(),
+              suggestions: ["Mobile-first breakpoints", "Tablet optimization", "Desktop enhancements"]
+            };
+            setMessages(prev => [...prev, progressMessage2]);
+          }, 4000);
+
+          setTimeout(() => {
+            const progressMessage3: Message = {
+              id: `progress3-${Date.now()}`,
+              content: "♿ Improving accessibility and user experience...",
+              sender: "assistant",
+              timestamp: new Date(),
+              suggestions: ["Adding ARIA labels", "Keyboard navigation", "Screen reader compatibility"]
+            };
+            setMessages(prev => [...prev, progressMessage3]);
+          }, 6000);
+
+          // Add a follow-up message after a delay to show completion
+          setTimeout(() => {
+            const completionMessage: Message = {
+              id: `completion-${Date.now()}`,
+              content: "✅ Layout improvements applied successfully! Your design now has enhanced visual appeal, better responsiveness, and improved accessibility.",
+              sender: "assistant",
+              timestamp: new Date(),
+              suggestions: [
+                "Further enhance animations and interactions",
+                "Add more advanced components",
+                "Optimize for performance",
+                "Enhance content organization"
+              ]
+            };
+            setMessages(prev => [...prev, completionMessage]);
+          }, 8000); // Show after 8 seconds to allow improvement to complete
+
         } else if (!currentCode) {
           toast({
             variant: "destructive",

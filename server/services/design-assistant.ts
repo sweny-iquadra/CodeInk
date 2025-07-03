@@ -145,22 +145,22 @@ export async function analyzeLayoutAndSuggestImprovements(htmlCode: string): Pro
       messages: [
         {
           role: "system",
-          content: `You are a web design expert. Analyze HTML layouts and suggest specific improvements.
+          content: `Web design expert. Analyze layouts and suggest specific, actionable improvements.
 
-Focus on:
-- Layout structure and organization
-- Responsive design
-- Accessibility
-- Visual hierarchy
-- User experience
-- Performance optimization
-
-Respond with JSON:
+Return JSON:
 {
-  "improvements": ["Specific improvement 1", "Specific improvement 2", "Specific improvement 3"],
-  "reasoning": "Overall analysis of the layout's strengths and weaknesses",
+  "improvements": [
+    "Add hover effects to interactive elements",
+    "Improve color contrast for better accessibility", 
+    "Enhance mobile responsive breakpoints",
+    "Optimize typography hierarchy and spacing",
+    "Include loading states and animations"
+  ],
+  "reasoning": "Brief analysis summary",
   "priority": "low|medium|high"
-}`
+}
+
+Focus on: layout structure, responsive design, accessibility, visual hierarchy, UX, performance.`
         },
         {
           role: "user",
