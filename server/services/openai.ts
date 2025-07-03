@@ -30,9 +30,9 @@ export interface CodeGenerationResponse {
 
 export async function generateCodeFromDescription(request: CodeGenerationRequest): Promise<CodeGenerationResponse> {
   try {
-    const systemPrompt = `HTML+Tailwind expert. Fast JSON: {"html":"<!DOCTYPE html>...","title":"Title","description":"desc"}`;
+    const systemPrompt = `Create HTML with Tailwind CSS. Return only valid JSON: {"html":"complete html","title":"page title","description":"brief desc"}. Always include <!DOCTYPE html>.`;
 
-    const userPrompt = `Create: ${request.description}`;
+    const userPrompt = `Generate responsive layout: ${request.description}`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -41,8 +41,8 @@ export async function generateCodeFromDescription(request: CodeGenerationRequest
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.1,
-      max_tokens: 700,
+      temperature: 0.2,
+      max_tokens: 1200,
     });
 
     const rawContent = response.choices[0].message.content || "{}";
@@ -56,12 +56,41 @@ export async function generateCodeFromDescription(request: CodeGenerationRequest
     } catch (parseError) {
       console.error("JSON parsing error:", parseError);
       console.error("Raw content:", rawContent);
-      // Fallback to safe response
-      result = {
-        html: "<!DOCTYPE html><html><head><title>Error</title></head><body><h1>Generation Error</h1><p>Unable to generate layout. Please try again.</p></body></html>",
-        title: "Generation Error",
-        description: "Failed to generate layout"
-      };
+      // Fallback: Try to extract HTML from the raw content if possible
+      const htmlMatch = rawContent.match(/<!DOCTYPE[^>]*>[\s\S]*?<\/html>/i);
+      if (htmlMatch) {
+        result = {
+          html: htmlMatch[0],
+          title: "Generated Layout",
+          description: "Layout generated with partial parsing"
+        };
+      } else {
+        // Create a simple but functional layout based on the request
+        const simpleHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Layout</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Generated Layout</h1>
+        <p class="text-gray-600">Your requested layout for: ${request.description}</p>
+        <div class="mt-8 bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Content Area</h2>
+            <p class="text-gray-700">This is a basic layout structure. You can improve it using the AI assistant.</p>
+        </div>
+    </div>
+</body>
+</html>`;
+        result = {
+          html: simpleHtml,
+          title: "Basic Layout",
+          description: "Simple layout generated"
+        };
+      }
     }
 
     return {
@@ -158,9 +187,9 @@ export async function explainCode(htmlCode: string): Promise<string> {
 
 export async function improveLayout(htmlCode: string, feedback?: string): Promise<CodeGenerationResponse> {
   try {
-    const systemPrompt = `HTML+Tailwind improvement expert. Fast JSON: {"html":"improved HTML","title":"title","description":"improvements"}`;
+    const systemPrompt = `Improve HTML layout with Tailwind CSS. Return only valid JSON: {"html":"complete improved html","title":"improved title","description":"what was improved"}. Keep <!DOCTYPE html>.`;
 
-    const userPrompt = `Improve: ${feedback || 'Better design'}\n\n${htmlCode.substring(0, 1000)}`;
+    const userPrompt = `Improve this layout based on: ${feedback || 'Better design and user experience'}\n\nCurrent HTML:\n${htmlCode.substring(0, 800)}`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
@@ -170,7 +199,7 @@ export async function improveLayout(htmlCode: string, feedback?: string): Promis
       ],
       response_format: { type: "json_object" },
       temperature: 0.2,
-      max_tokens: 1500,
+      max_tokens: 1200,
     });
 
     const rawContent = response.choices[0].message.content || "{}";

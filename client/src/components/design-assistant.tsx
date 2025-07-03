@@ -215,10 +215,14 @@ export function DesignAssistant({
         break;
       
       case 'improve':
-        if (onCodeImprove && actionData?.improvements && currentCode) {
-          // Join all improvements into a single feedback string
-          const improvementFeedback = actionData.improvements.join('. ');
+        if (onCodeImprove && currentCode) {
+          // Use the feedback from actionData or a generic improvement request
+          const improvementFeedback = actionData?.feedback || actionData?.improvements?.join('. ') || 'Improve design and user experience';
           onCodeImprove(improvementFeedback);
+          // Switch to preview mode for live preview
+          if (onSwitchToPreview) {
+            setTimeout(() => onSwitchToPreview(), 100);
+          }
           toast({
             title: "✨ Improving Layout",
             description: "Enhancing your current layout with AI suggestions..."

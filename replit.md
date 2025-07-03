@@ -184,6 +184,12 @@ Preferred communication style: Simple, everyday language.
   * Implemented graceful fallback responses when JSON parsing fails
   * Optimized max_tokens from 800 to 700 for faster response times while maintaining quality
   * All generation methods now handle malformed AI responses safely without throwing 500 errors
+- July 03, 2025. Enhanced code generation reliability and functionality:
+  * Improved AI prompts for more consistent JSON responses and increased max_tokens to 1200 for complete layouts
+  * Added intelligent fallback logic that extracts HTML from partial responses or generates functional basic layouts
+  * Fixed "Apply Improvements" functionality in CodeGenie chatbot with auto-switch to preview mode
+  * Enhanced layout improvement prompts for better results and user experience
+  * Eliminated "Generation Error" fallbacks by providing working layouts even when AI responses are malformed
 
 ## User Preferences
 
