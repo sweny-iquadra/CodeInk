@@ -19,10 +19,8 @@ import {
   Loader2,
   MessageSquare,
   X,
-  Minimize2,
-  Eye
+  Minimize2
 } from "lucide-react";
-import { ChatbotPreview } from "./chatbot-preview";
 
 interface Message {
   id: string;
@@ -39,17 +37,13 @@ interface DesignAssistantProps {
   onCodeGenerate?: (description: string, additionalContext?: string) => void;
   onCodeImprove?: (feedback: string) => void;
   onSwitchToPreview?: () => void;
-  chatbotGeneratedCode?: string;
-  chatbotGeneratedTitle?: string;
 }
 
 export function DesignAssistant({ 
   currentCode, 
   onCodeGenerate, 
   onCodeImprove,
-  onSwitchToPreview,
-  chatbotGeneratedCode,
-  chatbotGeneratedTitle
+  onSwitchToPreview
 }: DesignAssistantProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -68,23 +62,8 @@ export function DesignAssistant({
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
-  const [showChatbotPreview, setShowChatbotPreview] = useState(false);
-  const [chatbotPreviewCode, setChatbotPreviewCode] = useState("");
-  const [chatbotPreviewTitle, setChatbotPreviewTitle] = useState("");
-  const [isGeneratingPreview, setIsGeneratingPreview] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-
-  // Update chatbot preview when external code is generated
-  useEffect(() => {
-    if (chatbotGeneratedCode) {
-      setChatbotPreviewCode(chatbotGeneratedCode);
-      setIsGeneratingPreview(false);
-      if (chatbotGeneratedTitle) {
-        setChatbotPreviewTitle(chatbotGeneratedTitle);
-      }
-    }
-  }, [chatbotGeneratedCode, chatbotGeneratedTitle]);
 
   const chatMutation = useMutation({
     mutationFn: async ({ message, currentLayout, conversationHistory }: {
@@ -214,22 +193,20 @@ export function DesignAssistant({
     switch (actionType) {
       case 'generate':
         if (onCodeGenerate && actionData?.description) {
-          // Show chatbot preview and start generation
-          setIsGeneratingPreview(true);
-          setShowChatbotPreview(true);
-          setChatbotPreviewTitle(`Generating: ${actionData.description.substring(0, 30)}...`);
-          
           onCodeGenerate(actionData.description, actionData.additionalContext);
-          
+          // Switch to preview mode for live preview
+          if (onSwitchToPreview) {
+            setTimeout(() => onSwitchToPreview(), 100);
+          }
           toast({
             title: "🎨 Generating Layout",
-            description: "Creating your layout with live preview..."
+            description: "Creating your layout based on our conversation..."
           });
           
           // Add a system message to show generation is in progress
           const systemMessage: Message = {
             id: `system-${Date.now()}`,
-            content: "🔄 Generating your layout now... Watch the live preview window for real-time updates!",
+            content: "🔄 Generating your layout now... This will appear in the preview once complete!",
             sender: "assistant",
             timestamp: new Date()
           };
@@ -241,18 +218,14 @@ export function DesignAssistant({
         if (onCodeImprove && currentCode) {
           // Use the feedback from actionData or a generic improvement request
           const improvementFeedback = actionData?.feedback || actionData?.improvements?.join('. ') || 'Improve design and user experience';
-          
-          // Show chatbot preview for improvements
-          setIsGeneratingPreview(true);
-          setShowChatbotPreview(true);
-          setChatbotPreviewTitle("Applying Improvements...");
-          setChatbotPreviewCode(currentCode); // Show current code while improving
-          
           onCodeImprove(improvementFeedback);
-          
+          // Switch to preview mode for live preview
+          if (onSwitchToPreview) {
+            setTimeout(() => onSwitchToPreview(), 100);
+          }
           toast({
             title: "✨ Improving Layout",
-            description: "Enhancing your layout with live preview..."
+            description: "Enhancing your current layout with AI suggestions..."
           });
           
           // Add real-time improvement suggestions based on the action data
@@ -403,7 +376,6 @@ export function DesignAssistant({
   }
 
   return (
-    <>
     <Card className="fixed bottom-6 right-6 w-96 h-[600px] shadow-xl border-2 border-violet-200 dark:border-violet-800 flex flex-col">
       <CardHeader className="pb-3 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950 dark:to-purple-950">
         <div className="flex items-center justify-between">
@@ -431,15 +403,6 @@ export function DesignAssistant({
                 )}
               </Button>
             )}
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setShowChatbotPreview(!showChatbotPreview)}
-              className="text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-200"
-              title="Toggle live preview window"
-            >
-              <Eye className="h-4 w-4" />
-            </Button>
             <Button 
               variant="ghost" 
               size="sm"
@@ -566,15 +529,5 @@ export function DesignAssistant({
         </div>
       </div>
     </Card>
-
-    {/* Chatbot Live Preview Window */}
-    <ChatbotPreview
-      isOpen={showChatbotPreview}
-      onClose={() => setShowChatbotPreview(false)}
-      generatedCode={chatbotPreviewCode}
-      title={chatbotPreviewTitle || "Live Preview"}
-      isGenerating={isGeneratingPreview}
-    />
-    </>
   );
 }
