@@ -30,26 +30,19 @@ export interface CodeGenerationResponse {
 
 export async function generateCodeFromDescription(request: CodeGenerationRequest): Promise<CodeGenerationResponse> {
   try {
-    const systemPrompt = `Expert frontend developer. Create HTML with Tailwind CSS.
-
-Generate:
-- Semantic HTML
-- Tailwind CSS responsive
-- Complete document with CDN
-
-JSON: {"html":"code","title":"title","description":"desc"}`;
+    const systemPrompt = `HTML+Tailwind expert. Fast JSON: {"html":"<!DOCTYPE html>...","title":"Title","description":"desc"}`;
 
     const userPrompt = `Create: ${request.description}`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini", // Faster model
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.2,
-      max_tokens: 1500,
+      temperature: 0.1,
+      max_tokens: 800,
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
@@ -66,24 +59,12 @@ JSON: {"html":"code","title":"title","description":"desc"}`;
 
 export async function analyzeImageAndGenerateCode(imageBase64: string, additionalContext?: string): Promise<CodeGenerationResponse> {
   try {
-    const systemPrompt = `Expert frontend developer. Analyze images and create HTML layouts with Tailwind CSS efficiently.
+    const systemPrompt = `Image to HTML+Tailwind expert. Fast JSON response: {"html":"<!DOCTYPE html>...","title":"title","description":"desc"}`;
 
-Create HTML matching the image structure with:
-- Semantic elements
-- Tailwind CSS responsive design
-- Complete HTML with CDN
-
-JSON format:
-{
-  "html": "HTML code",
-  "title": "layout title",
-  "description": "image description"
-}`;
-
-    const userPrompt = `Create HTML from this image${additionalContext ? ` (${additionalContext})` : ''}`;
+    const userPrompt = `Convert image to HTML+Tailwind${additionalContext ? ` (${additionalContext})` : ''}`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         {
@@ -100,8 +81,8 @@ JSON format:
         }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.5,
-      max_tokens: 3000,
+      temperature: 0.2,
+      max_tokens: 1500,
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
@@ -119,7 +100,7 @@ JSON format:
 export async function explainCode(htmlCode: string): Promise<string> {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
@@ -141,22 +122,9 @@ export async function explainCode(htmlCode: string): Promise<string> {
 
 export async function improveLayout(htmlCode: string, feedback?: string): Promise<CodeGenerationResponse> {
   try {
-    const systemPrompt = `Expert frontend developer. Improve HTML layouts with Tailwind CSS efficiently.
+    const systemPrompt = `HTML+Tailwind improvement expert. Fast JSON: {"html":"improved HTML","title":"title","description":"improvements"}`;
 
-Enhance:
-- Responsive design
-- Accessibility
-- Visual appeal
-- Modern styling
-
-JSON format:
-{
-  "html": "improved HTML",
-  "title": "layout title", 
-  "description": "improvements made"
-}`;
-
-    const userPrompt = `Improve layout: ${feedback || 'Better design, responsiveness, accessibility'}\n\n${htmlCode.substring(0, 1500)}`;
+    const userPrompt = `Improve: ${feedback || 'Better design'}\n\n${htmlCode.substring(0, 1000)}`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",

@@ -61,15 +61,15 @@ Be enthusiastic and helpful! Focus on understanding user needs and providing val
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         ...contextMessages,
         { role: "user", content: message }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.4,
-      max_tokens: 600,
+      temperature: 0.3,
+      max_tokens: 400,
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
@@ -94,7 +94,7 @@ export async function generateFrameworkRecommendation(requirements: string): Pro
 }> {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
@@ -139,7 +139,7 @@ export async function analyzeLayoutAndSuggestImprovements(htmlCode: string): Pro
 }> {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",

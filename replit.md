@@ -154,11 +154,12 @@ Preferred communication style: Simple, everyday language.
   * Maintained all interactive features: layout generation, design feedback, framework recommendations
 - July 03, 2025. Optimized code generation performance for user-friendly experience:
   * Reduced OpenAI API prompts from verbose to concise and efficient formats
-  * Lowered temperature settings (0.7 → 0.4-0.5) for faster, more focused responses  
-  * Added max_tokens limits (600-3000) to reduce processing time
+  * Lowered temperature settings (0.7 → 0.1-0.3) for faster, more focused responses  
+  * Added max_tokens limits (400-1000) to significantly reduce processing time
   * Shortened system prompts while maintaining functionality
+  * Switched all functions to use gpt-4o-mini for maximum speed
   * Optimized all API calls: text generation, image analysis, layout improvement, design assistant chat
-  * Expected performance improvement: 10-18 seconds reduced to 5-10 seconds for typical requests
+  * Target performance: reduce from 20+ seconds to under 5 seconds
 - July 03, 2025. Implemented comprehensive cancellation functionality for code generation:
   * Added AbortController support to all API requests for proper cancellation handling
   * Enhanced LoadingModal with cancel button (X icon and "Cancel Generation" button)

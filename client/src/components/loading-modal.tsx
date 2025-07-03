@@ -39,7 +39,7 @@ export function LoadingModal({ open, progress = 65, onCancel }: LoadingModalProp
             Our AI is analyzing your input and creating responsive HTML + Tailwind CSS...
           </p>
           <Progress value={progress} className="w-full mb-4 h-3 rounded-full" />
-          <p className="text-sm text-muted-foreground font-medium">Target: ~7 seconds</p>
+          <p className="text-sm text-muted-foreground font-medium">Target: ~5 seconds</p>
           
           {onCancel && (
             <Button
