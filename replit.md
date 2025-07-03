@@ -208,6 +208,14 @@ Preferred communication style: Simple, everyday language.
   * Fixed issue where apiRequest function was incompatible with FormData due to automatic JSON content-type setting
   * Implemented custom authenticated file upload that properly handles multipart/form-data with JWT tokens
   * All image-to-code generation functionality restored and working correctly with proper authentication
+- July 03, 2025. Added comprehensive user-specific layout management with public/private visibility controls:
+  * Added public/private toggle switch to input panel with visual indicators (eye icons)
+  * Implemented user-specific filtering - each user sees only their own private layouts in history
+  * Enhanced Gallery tab to display only public layouts from all users
+  * Added visibility indicators to layout history cards showing public (green eye) or private (gray eye-off) status
+  * Updated backend routes to handle isPublic parameter from both text and image generation
+  * CodeGenie chatbot layouts default to private for user privacy
+  * All layouts now properly enforce privacy controls with database-level separation
 
 ## User Preferences
 

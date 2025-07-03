@@ -4,12 +4,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
-import { Upload, Pen, CloudUpload, Wand2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { Upload, Pen, CloudUpload, Wand2, Eye, EyeOff } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PromptExamples } from "./prompt-examples";
 
 interface InputPanelProps {
-  onGenerate: (data: { type: 'text' | 'image'; description?: string; additionalContext?: string; file?: File }) => void;
+  onGenerate: (data: { type: 'text' | 'image'; description?: string; additionalContext?: string; file?: File; isPublic?: boolean }) => void;
   isLoading: boolean;
 }
 
@@ -19,6 +20,7 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
   const [additionalContext, setAdditionalContext] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -87,6 +89,7 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
         type: 'image',
         file: selectedFile,
         additionalContext,
+        isPublic,
       });
     } else {
       if (!description.trim()) {
@@ -101,6 +104,7 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
         type: 'text',
         description,
         additionalContext,
+        isPublic,
       });
     }
   };
@@ -203,8 +207,38 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
             />
           </div>
 
+          {/* Visibility Toggle */}
+          <div className="mt-6 p-4 border-2 border-dashed border-border/50 rounded-xl bg-muted/30">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                {isPublic ? (
+                  <Eye className="w-5 h-5 text-green-500" />
+                ) : (
+                  <EyeOff className="w-5 h-5 text-muted-foreground" />
+                )}
+                <div>
+                  <Label htmlFor="visibility-toggle" className="text-base font-medium cursor-pointer">
+                    {isPublic ? "Public Layout" : "Private Layout"}
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    {isPublic 
+                      ? "This layout will be visible in the public gallery"
+                      : "This layout will only be visible to you"
+                    }
+                  </p>
+                </div>
+              </div>
+              <Switch
+                id="visibility-toggle"
+                checked={isPublic}
+                onCheckedChange={setIsPublic}
+                className="data-[state=checked]:bg-green-500"
+              />
+            </div>
+          </div>
+
           <Button 
-            className="w-full mt-8 h-14 text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl" 
+            className="w-full mt-6 h-14 text-lg font-semibold bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90 shadow-lg hover:shadow-xl transition-all duration-200 rounded-xl" 
             onClick={handleGenerate}
             disabled={isLoading}
           >
