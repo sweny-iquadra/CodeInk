@@ -1,10 +1,12 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
-import { insertLayoutSchema } from "@shared/schema";
+import { insertLayoutSchema, loginSchema, registerSchema } from "@shared/schema";
 import multer from "multer";
 import { generateCodeFromDescription, analyzeImageAndGenerateCode, explainCode, improveLayout } from "./services/openai";
 import { processDesignAssistantMessage, generateFrameworkRecommendation, analyzeLayoutAndSuggestImprovements } from "./services/design-assistant";
+import { authService } from "./services/auth";
+import { authenticateToken, optionalAuth } from "./middleware/auth";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -23,11 +25,72 @@ const upload = multer({
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
-  // Generate code from text description
-  app.post("/api/generate-from-text", async (req, res) => {
+  // Authentication routes
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const validatedData = registerSchema.parse(req.body);
+      const result = await authService.register(validatedData);
+      res.status(201).json(result);
+    } catch (error: unknown) {
+      console.error("Registration error:", error);
+      res.status(400).json({
+        message: error instanceof Error ? error.message : "Registration failed"
+      });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const validatedData = loginSchema.parse(req.body);
+      const result = await authService.login(validatedData);
+      res.json(result);
+    } catch (error: unknown) {
+      console.error("Login error:", error);
+      res.status(401).json({
+        message: error instanceof Error ? error.message : "Login failed"
+      });
+    }
+  });
+
+  app.get("/api/auth/me", authenticateToken, async (req, res) => {
+    try {
+      const token = req.headers.authorization?.split(' ')[1];
+      if (!token) {
+        return res.status(401).json({ message: "No token provided" });
+      }
+
+      const user = await authService.getCurrentUser(token);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
+
+      res.json({ user });
+    } catch (error: unknown) {
+      console.error("Get current user error:", error);
+      res.status(500).json({ message: "Failed to get user information" });
+    }
+  });
+
+  app.post("/api/auth/refresh", async (req, res) => {
+    try {
+      const { token } = req.body;
+      if (!token) {
+        return res.status(400).json({ message: "Token is required" });
+      }
+
+      const newToken = await authService.refreshToken(token);
+      res.json({ token: newToken });
+    } catch (error: unknown) {
+      console.error("Token refresh error:", error);
+      res.status(401).json({ message: "Invalid token" });
+    }
+  });
+
+  // Generate code from text description (protected)
+  app.post("/api/generate-from-text", authenticateToken, async (req, res) => {
     try {
       const { description, additionalContext } = req.body;
-      
+
       if (!description) {
         return res.status(400).json({ message: "Description is required" });
       }
@@ -37,13 +100,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
         additionalContext,
       });
 
-      // Save to storage
+      // Save to storage with user association
       const layout = await storage.createLayout({
         title: result.title,
         description: result.description,
         inputMethod: "describe",
         generatedCode: result.html,
         additionalContext,
+        userId: req.user!.userId,
+        isPublic: false,
       });
 
       res.json({ ...result, id: layout.id });
@@ -53,8 +118,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate code from uploaded image
-  app.post("/api/generate-from-image", upload.single("image"), async (req, res) => {
+  // Generate code from uploaded image (protected)
+  app.post("/api/generate-from-image", authenticateToken, upload.single("image"), async (req, res) => {
     try {
       if (!req.file) {
         return res.status(400).json({ message: "Image file is required" });
@@ -65,13 +130,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const result = await analyzeImageAndGenerateCode(imageBase64, additionalContext);
 
-      // Save to storage
+      // Save to storage with user association
       const layout = await storage.createLayout({
         title: result.title,
         description: result.description,
         inputMethod: "upload",
         generatedCode: result.html,
         additionalContext,
+        userId: req.user!.userId,
+        isPublic: false,
       });
 
       res.json({ ...result, id: layout.id });
@@ -81,11 +148,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Get recent layouts
-  app.get("/api/layouts", async (req, res) => {
+  // Get user's recent layouts (protected)
+  app.get("/api/layouts", authenticateToken, async (req, res) => {
     try {
       const limit = parseInt(req.query.limit as string) || 3;
-      const layouts = await storage.getLayouts(limit);
+      const layouts = await storage.getUserLayouts(req.user!.userId, limit);
       res.json(layouts);
     } catch (error: unknown) {
       console.error("Error fetching layouts:", error);
@@ -110,13 +177,13 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const { isPublic } = req.body;
-      
+
       if (typeof isPublic !== 'boolean') {
         return res.status(400).json({ message: "isPublic must be a boolean" });
       }
 
       const layout = await storage.updateLayoutVisibility(id, isPublic);
-      
+
       if (!layout) {
         return res.status(404).json({ message: "Layout not found" });
       }
@@ -133,7 +200,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const id = parseInt(req.params.id);
       const layout = await storage.getLayout(id);
-      
+
       if (!layout) {
         return res.status(404).json({ message: "Layout not found" });
       }
@@ -149,7 +216,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/explain-code", async (req, res) => {
     try {
       const { code } = req.body;
-      
+
       if (!code) {
         return res.status(400).json({ message: "Code is required" });
       }
@@ -166,7 +233,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/improve-layout", async (req, res) => {
     try {
       const { code, feedback } = req.body;
-      
+
       if (!code) {
         return res.status(400).json({ message: "Code is required" });
       }
@@ -193,7 +260,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/design-assistant/chat", async (req, res) => {
     try {
       const { message, currentLayout, conversationHistory } = req.body;
-      
+
       if (!message) {
         return res.status(400).json({ message: "Message is required" });
       }
@@ -214,7 +281,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/design-assistant/framework-recommendation", async (req, res) => {
     try {
       const { requirements } = req.body;
-      
+
       if (!requirements) {
         return res.status(400).json({ message: "Requirements are required" });
       }
@@ -230,7 +297,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/design-assistant/analyze-layout", async (req, res) => {
     try {
       const { htmlCode } = req.body;
-      
+
       if (!htmlCode) {
         return res.status(400).json({ message: "HTML code is required" });
       }
