@@ -42,10 +42,27 @@ export async function generateCodeFromDescription(request: CodeGenerationRequest
       ],
       response_format: { type: "json_object" },
       temperature: 0.1,
-      max_tokens: 800,
+      max_tokens: 700,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const rawContent = response.choices[0].message.content || "{}";
+    
+    // Clean the content to remove control characters that could break JSON parsing
+    const cleanedContent = rawContent.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+    
+    let result;
+    try {
+      result = JSON.parse(cleanedContent);
+    } catch (parseError) {
+      console.error("JSON parsing error:", parseError);
+      console.error("Raw content:", rawContent);
+      // Fallback to safe response
+      result = {
+        html: "<!DOCTYPE html><html><head><title>Error</title></head><body><h1>Generation Error</h1><p>Unable to generate layout. Please try again.</p></body></html>",
+        title: "Generation Error",
+        description: "Failed to generate layout"
+      };
+    }
 
     return {
       html: result.html || "",
@@ -53,6 +70,7 @@ export async function generateCodeFromDescription(request: CodeGenerationRequest
       description: result.description || "AI-generated layout"
     };
   } catch (error) {
+    console.error("Error in generateCodeFromDescription:", error);
     throw new Error(`Failed to generate code: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -85,7 +103,24 @@ export async function analyzeImageAndGenerateCode(imageBase64: string, additiona
       max_tokens: 1500,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const rawContent = response.choices[0].message.content || "{}";
+    
+    // Clean the content to remove control characters that could break JSON parsing
+    const cleanedContent = rawContent.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+    
+    let result;
+    try {
+      result = JSON.parse(cleanedContent);
+    } catch (parseError) {
+      console.error("JSON parsing error in image analysis:", parseError);
+      console.error("Raw content:", rawContent);
+      // Fallback to safe response
+      result = {
+        html: "<!DOCTYPE html><html><head><title>Error</title></head><body><h1>Image Analysis Error</h1><p>Unable to generate layout from image. Please try again.</p></body></html>",
+        title: "Image Analysis Error",
+        description: "Failed to generate layout from image"
+      };
+    }
 
     return {
       html: result.html || "",
@@ -93,6 +128,7 @@ export async function analyzeImageAndGenerateCode(imageBase64: string, additiona
       description: result.description || "AI-generated layout from uploaded image"
     };
   } catch (error) {
+    console.error("Error in analyzeImageAndGenerateCode:", error);
     throw new Error(`Failed to analyze image and generate code: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
@@ -137,7 +173,24 @@ export async function improveLayout(htmlCode: string, feedback?: string): Promis
       max_tokens: 1500,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const rawContent = response.choices[0].message.content || "{}";
+    
+    // Clean the content to remove control characters that could break JSON parsing
+    const cleanedContent = rawContent.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+    
+    let result;
+    try {
+      result = JSON.parse(cleanedContent);
+    } catch (parseError) {
+      console.error("JSON parsing error in layout improvement:", parseError);
+      console.error("Raw content:", rawContent);
+      // Fallback to safe response
+      result = {
+        html: htmlCode, // Return original code if improvement fails
+        title: "Improvement Error",
+        description: "Failed to improve layout, returning original"
+      };
+    }
 
     return {
       html: result.html || htmlCode,
@@ -145,6 +198,7 @@ export async function improveLayout(htmlCode: string, feedback?: string): Promis
       description: result.description || "AI-improved layout with better design and accessibility"
     };
   } catch (error) {
+    console.error("Error in improveLayout:", error);
     throw new Error(`Failed to improve layout: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

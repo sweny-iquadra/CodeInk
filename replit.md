@@ -178,6 +178,12 @@ Preferred communication style: Simple, everyday language.
   * Cleaned up loading modal by removing explicit time display and cancel button text
   * Users can now cancel generation only via the top-right X button for cleaner interface
   * Integrated real-time preview switching across all code generation methods (text, image, improvement, chatbot)
+- July 03, 2025. Resolved critical JSON parsing errors in all code generation services:
+  * Applied robust JSON validation and error handling to text-to-code, image-to-code, and layout improvement functions
+  * Added content cleaning to remove control characters that break JSON parsing
+  * Implemented graceful fallback responses when JSON parsing fails
+  * Optimized max_tokens from 800 to 700 for faster response times while maintaining quality
+  * All generation methods now handle malformed AI responses safely without throwing 500 errors
 
 ## User Preferences
 
