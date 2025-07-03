@@ -30,30 +30,22 @@ export interface CodeGenerationResponse {
 
 export async function generateCodeFromDescription(request: CodeGenerationRequest): Promise<CodeGenerationResponse> {
   try {
-    const systemPrompt = `You are an expert frontend developer specializing in creating responsive, accessible HTML layouts using Tailwind CSS. Generate complete, production-ready HTML code based on user descriptions.
+    const systemPrompt = `You are an expert frontend developer. Create responsive HTML layouts with Tailwind CSS quickly and efficiently.
 
-Requirements:
-- Use modern HTML5 semantic elements
-- Apply Tailwind CSS classes for responsive design
-- Include proper accessibility attributes
-- Ensure mobile-first responsive design
-- Use semantic color classes and proper contrast
-- Include hover states and transitions where appropriate
-- Generate complete HTML documents with head and body sections
-- Include Tailwind CSS CDN link
+Generate HTML with:
+- Modern semantic elements
+- Tailwind CSS classes for responsive design
+- Clean, minimal structure
+- Complete HTML document with Tailwind CDN
 
-Respond with JSON in this exact format:
+JSON format:
 {
-  "html": "complete HTML code here",
-  "title": "short descriptive title",
-  "description": "brief description of the layout"
+  "html": "HTML code",
+  "title": "layout title",
+  "description": "brief description"
 }`;
 
-    const userPrompt = `Create a responsive HTML layout with Tailwind CSS based on this description: ${request.description}
-
-${request.additionalContext ? `Additional context: ${request.additionalContext}` : ''}
-
-Generate clean, semantic HTML with proper Tailwind CSS classes for styling and responsiveness.`;
+    const userPrompt = `Create: ${request.description}${request.additionalContext ? ` (${request.additionalContext})` : ''}`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -62,7 +54,8 @@ Generate clean, semantic HTML with proper Tailwind CSS classes for styling and r
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
+      temperature: 0.5,
+      max_tokens: 3000,
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
@@ -79,33 +72,21 @@ Generate clean, semantic HTML with proper Tailwind CSS classes for styling and r
 
 export async function analyzeImageAndGenerateCode(imageBase64: string, additionalContext?: string): Promise<CodeGenerationResponse> {
   try {
-    const systemPrompt = `You are an expert frontend developer who can analyze UI sketches, wireframes, and screenshots to create responsive HTML layouts using Tailwind CSS.
+    const systemPrompt = `Expert frontend developer. Analyze images and create HTML layouts with Tailwind CSS efficiently.
 
-Analyze the provided image and generate complete, production-ready HTML code that recreates the layout shown in the image.
+Create HTML matching the image structure with:
+- Semantic elements
+- Tailwind CSS responsive design
+- Complete HTML with CDN
 
-Requirements:
-- Use modern HTML5 semantic elements
-- Apply Tailwind CSS classes for responsive design
-- Match the layout structure shown in the image
-- Include proper accessibility attributes
-- Ensure mobile-first responsive design
-- Use appropriate semantic color classes
-- Include hover states and transitions where appropriate
-- Generate complete HTML documents with head and body sections
-- Include Tailwind CSS CDN link
-
-Respond with JSON in this exact format:
+JSON format:
 {
-  "html": "complete HTML code here",
-  "title": "short descriptive title based on the image",
-  "description": "brief description of what you see in the image"
+  "html": "HTML code",
+  "title": "layout title",
+  "description": "image description"
 }`;
 
-    const userPrompt = `Analyze this UI image and create a responsive HTML layout with Tailwind CSS that recreates the design shown.
-
-${additionalContext ? `Additional context: ${additionalContext}` : ''}
-
-Focus on matching the layout structure, component arrangement, and overall visual hierarchy shown in the image.`;
+    const userPrompt = `Create HTML from this image${additionalContext ? ` (${additionalContext})` : ''}`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -125,8 +106,8 @@ Focus on matching the layout structure, component arrangement, and overall visua
         }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
-      max_tokens: 4000,
+      temperature: 0.5,
+      max_tokens: 3000,
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
@@ -166,30 +147,22 @@ export async function explainCode(htmlCode: string): Promise<string> {
 
 export async function improveLayout(htmlCode: string, feedback?: string): Promise<CodeGenerationResponse> {
   try {
-    const systemPrompt = `You are an expert frontend developer specializing in improving HTML layouts with Tailwind CSS. Analyze the provided code and suggest improvements for better design, accessibility, and user experience.
+    const systemPrompt = `Expert frontend developer. Improve HTML layouts with Tailwind CSS efficiently.
 
-Focus on:
-- Better responsive design patterns
-- Improved accessibility
-- Enhanced visual hierarchy
-- Better spacing and typography
-- Modern design trends
-- Performance optimizations
+Enhance:
+- Responsive design
+- Accessibility
+- Visual appeal
+- Modern styling
 
-Respond with JSON in this exact format:
+JSON format:
 {
-  "html": "improved HTML code here",
-  "title": "title for the improved layout",
-  "description": "description of improvements made"
+  "html": "improved HTML",
+  "title": "layout title", 
+  "description": "improvements made"
 }`;
 
-    const userPrompt = `Improve this HTML layout with better Tailwind CSS styling, responsive design, and accessibility:
-
-${htmlCode}
-
-${feedback ? `User feedback: ${feedback}` : ''}
-
-Make it more modern, accessible, and visually appealing while maintaining the core structure.`;
+    const userPrompt = `Improve layout: ${feedback || 'Better design, responsiveness, accessibility'}\n\n${htmlCode.substring(0, 1500)}`;
 
     const response = await openai.chat.completions.create({
       model: "gpt-4o",
@@ -198,7 +171,8 @@ Make it more modern, accessible, and visually appealing while maintaining the co
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
+      temperature: 0.5,
+      max_tokens: 3000,
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");

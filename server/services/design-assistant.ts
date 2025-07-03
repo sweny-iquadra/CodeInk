@@ -24,46 +24,25 @@ export async function processDesignAssistantMessage(request: DesignAssistantRequ
     content: msg.content
   }));
 
-  const systemPrompt = `You are an expert AI Design Assistant for a web layout generation tool called Codink. Your role is to help users create beautiful, responsive web layouts through conversational interaction.
+  const systemPrompt = `AI Design Assistant for web layouts. Help users create layouts efficiently.
 
-**Your Capabilities:**
-1. **Interactive Layout Generation**: Help users describe layouts conversationally and generate specific requirements
-2. **Real-time Design Feedback**: Analyze existing layouts and suggest improvements
-3. **Framework Recommendations**: Suggest the best CSS framework (Tailwind, Bootstrap, Material Design) based on requirements
+Capabilities: Generate layouts, provide feedback, framework recommendations.
+Current: ${currentLayout ? 'Has layout' : 'No layout'}
 
-**Current Layout Context:** ${currentLayout ? 'User has a current layout loaded' : 'No current layout'}
-
-**Response Format:** Always respond with JSON in this exact format:
+JSON format:
 {
-  "response": "Your conversational response to the user",
-  "suggestions": ["Quick suggestion 1", "Quick suggestion 2", "Quick suggestion 3"],
+  "response": "response text",
+  "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"],
   "actionType": "generate|improve|recommend|none",
   "actionData": {
-    // Include relevant data based on actionType
-    "description": "Layout description for generation",
+    "description": "layout description",
     "framework": "tailwind|bootstrap|material-ui",
-    "additionalContext": "Any additional context",
-    "feedback": "Improvement feedback"
+    "additionalContext": "context",
+    "feedback": "feedback"
   }
 }
 
-**Action Types:**
-- **generate**: When user wants to create a new layout
-- **improve**: When user wants to enhance existing layout  
-- **recommend**: When user asks for framework or design advice
-- **none**: For general conversation
-
-**Interactive Layout Generation Examples:**
-User: "I need a landing page for my restaurant"
-→ actionType: "generate", description: "Restaurant landing page with hero section, menu preview, contact info", automatically generate layout
-
-User: "Create a dashboard for analytics"  
-→ actionType: "generate", description: "Analytics dashboard with charts, metrics cards, navigation sidebar", automatically generate layout
-
-User: "Build a portfolio website"
-→ actionType: "generate", description: "Portfolio website with project gallery, about section, skills showcase", automatically generate layout
-
-**Important:** When users describe what they want to build, ALWAYS set actionType to "generate" and provide a comprehensive description in actionData. Don't ask follow-up questions unless the request is extremely vague.
+When users describe layouts: set actionType "generate" with comprehensive description. Generate immediately.
 
 **Real-time Design Feedback:**
 When currentLayout exists, analyze it and suggest specific improvements like:
@@ -89,8 +68,8 @@ Be enthusiastic and helpful! Focus on understanding user needs and providing val
         { role: "user", content: message }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
-      max_tokens: 1000,
+      temperature: 0.4,
+      max_tokens: 600,
     });
 
     const result = JSON.parse(response.choices[0].message.content || '{}');
@@ -143,6 +122,7 @@ Respond with JSON:
       ],
       response_format: { type: "json_object" },
       temperature: 0.3,
+      max_tokens: 400,
     });
 
     return JSON.parse(response.choices[0].message.content || '{}');
@@ -187,6 +167,7 @@ Respond with JSON:
       ],
       response_format: { type: "json_object" },
       temperature: 0.4,
+      max_tokens: 500,
     });
 
     return JSON.parse(response.choices[0].message.content || '{}');
