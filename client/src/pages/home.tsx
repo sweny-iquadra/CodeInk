@@ -27,6 +27,8 @@ export default function Home() {
   const [isReady, setIsReady] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [outputTab, setOutputTab] = useState("code");
+  const [chatbotGeneratedCode, setChatbotGeneratedCode] = useState("");
+  const [chatbotGeneratedTitle, setChatbotGeneratedTitle] = useState("");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -47,6 +49,9 @@ export default function Home() {
       setIsReady(true);
       setOutputTab("preview"); // Auto-switch to preview for live preview
       setAbortController(null);
+      // Update chatbot generated code for live preview
+      setChatbotGeneratedCode(data.html);
+      setChatbotGeneratedTitle(data.title);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({
         title: "Code generated successfully!",
@@ -101,6 +106,9 @@ export default function Home() {
       setIsReady(true);
       setOutputTab("preview"); // Auto-switch to preview for live preview
       setAbortController(null);
+      // Update chatbot generated code for live preview
+      setChatbotGeneratedCode(data.html);
+      setChatbotGeneratedTitle(data.title);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({
         title: "Code generated from image!",
@@ -141,6 +149,9 @@ export default function Home() {
       setIsReady(true);
       setOutputTab("preview"); // Auto-switch to preview for live preview
       setAbortController(null);
+      // Update chatbot generated code for live preview
+      setChatbotGeneratedCode(data.html);
+      setChatbotGeneratedTitle(data.title);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({
         title: "Layout improved!",
@@ -306,6 +317,8 @@ export default function Home() {
         onCodeGenerate={handleAssistantCodeGenerate}
         onCodeImprove={handleAssistantCodeImprove}
         onSwitchToPreview={() => setOutputTab("preview")}
+        chatbotGeneratedCode={chatbotGeneratedCode}
+        chatbotGeneratedTitle={chatbotGeneratedTitle}
       />
     </div>
   );

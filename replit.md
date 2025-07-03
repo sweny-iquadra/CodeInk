@@ -196,6 +196,13 @@ Preferred communication style: Simple, everyday language.
   * Enhanced improvement action with specific suggestions for each improvement phase
   * Implemented 8-second progressive update sequence with completion confirmation and follow-up suggestions
   * Users now see detailed real-time feedback when clicking "Apply Improvements" in CodeGenie chatbot
+- July 03, 2025. Created alternative live preview approach for CodeGenie chatbot with enhanced user experience:
+  * Developed dedicated ChatbotPreview component as floating window with separate preview/code tabs
+  * Integrated live preview that automatically updates when CodeGenie generates or improves layouts
+  * Added manual preview toggle button (eye icon) in chatbot header for user control
+  * Implemented real-time code synchronization between main application and chatbot preview
+  * Enhanced chatbot workflow with live preview without breaking existing main preview functionality
+  * Users can now see live changes in dedicated chatbot preview window while maintaining normal workflow
 
 ## User Preferences
 
