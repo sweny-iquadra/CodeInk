@@ -204,10 +204,10 @@ Preferred communication style: Simple, everyday language.
   * CodeGenie chatbot now uses standard preview switching as before
 - July 03, 2025. Fixed critical authentication error in image upload functionality:
   * Resolved "Access token required" error when generating code from uploaded images
-  * Updated image generation mutation to use apiRequest function for proper JWT authentication
-  * Maintained backwards compatibility with all existing authentication flows
-  * Image upload now properly authenticates with JWT tokens instead of relying only on cookies
-  * All image-to-code generation functionality restored and working correctly
+  * Updated image generation to use authenticated fetch with proper JWT token headers for FormData uploads
+  * Fixed issue where apiRequest function was incompatible with FormData due to automatic JSON content-type setting
+  * Implemented custom authenticated file upload that properly handles multipart/form-data with JWT tokens
+  * All image-to-code generation functionality restored and working correctly with proper authentication
 
 ## User Preferences
 

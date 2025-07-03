@@ -81,8 +81,26 @@ export default function Home() {
         formData.append("additionalContext", additionalContext);
       }
 
-      // Use apiRequest for proper authentication with JWT token
-      const response = await apiRequest("POST", "/api/generate-from-image", formData, controller.signal);
+      // Use authenticated fetch with JWT token for file uploads
+      const accessToken = localStorage.getItem("auth_token");
+      const headers: Record<string, string> = {};
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`;
+      }
+
+      const response = await fetch("/api/generate-from-image", {
+        method: "POST",
+        headers,
+        body: formData,
+        credentials: "include",
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(errorText || response.statusText);
+      }
+
       return response.json();
     },
     onSuccess: (data: GenerationResult) => {
