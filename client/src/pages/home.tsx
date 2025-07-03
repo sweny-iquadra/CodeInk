@@ -213,11 +213,11 @@ export default function Home() {
     queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
   };
 
-  const handleAssistantCodeGenerate = (description: string, additionalContext?: string) => {
+  const handleAssistantCodeGenerate = (description: string, additionalContext?: string, isPublic?: boolean) => {
     generateFromTextMutation.mutate({
       description,
       additionalContext,
-      isPublic: false, // Default to private for assistant-generated layouts
+      isPublic: isPublic ?? false, // Default to private if not specified
     });
   };
 

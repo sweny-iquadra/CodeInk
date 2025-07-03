@@ -214,8 +214,13 @@ Preferred communication style: Simple, everyday language.
   * Enhanced Gallery tab to display only public layouts from all users
   * Added visibility indicators to layout history cards showing public (green eye) or private (gray eye-off) status
   * Updated backend routes to handle isPublic parameter from both text and image generation
-  * CodeGenie chatbot layouts default to private for user privacy
   * All layouts now properly enforce privacy controls with database-level separation
+- July 03, 2025. Enhanced CodeGenie chatbot with public/private layout visibility controls:
+  * Added public/private toggle switch to CodeGenie chatbot interface
+  * Users can now control whether chatbot-generated layouts are public or private
+  * Toggle displays "Public" with green eye icon or "Private" with gray eye-off icon
+  * Chatbot layouts default to private for user privacy but can be toggled to public
+  * Integrated visibility control seamlessly into chatbot workflow
 
 ## User Preferences
 

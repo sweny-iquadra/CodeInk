@@ -19,7 +19,9 @@ import {
   Loader2,
   MessageSquare,
   X,
-  Minimize2
+  Minimize2,
+  Eye,
+  EyeOff
 } from "lucide-react";
 
 interface Message {
@@ -34,7 +36,7 @@ interface Message {
 
 interface DesignAssistantProps {
   currentCode?: string;
-  onCodeGenerate?: (description: string, additionalContext?: string) => void;
+  onCodeGenerate?: (description: string, additionalContext?: string, isPublic?: boolean) => void;
   onCodeImprove?: (feedback: string) => void;
   onSwitchToPreview?: () => void;
 }
@@ -62,6 +64,7 @@ export function DesignAssistant({
   ]);
   const [inputValue, setInputValue] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
+  const [isPublic, setIsPublic] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -193,7 +196,7 @@ export function DesignAssistant({
     switch (actionType) {
       case 'generate':
         if (onCodeGenerate && actionData?.description) {
-          onCodeGenerate(actionData.description, actionData.additionalContext);
+          onCodeGenerate(actionData.description, actionData.additionalContext, isPublic);
           // Switch to preview mode for live preview
           if (onSwitchToPreview) {
             setTimeout(() => onSwitchToPreview(), 100);
@@ -506,6 +509,24 @@ export function DesignAssistant({
       </ScrollArea>
 
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+        {/* Public/Private Toggle */}
+        <div className="flex items-center justify-between mb-3">
+          <span className="text-sm font-medium text-foreground">Generated Layout Visibility</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setIsPublic(!isPublic)}
+            className={`flex items-center gap-2 px-3 py-1 text-sm ${
+              isPublic 
+                ? 'text-green-600 hover:text-green-700 dark:text-green-400' 
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            {isPublic ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+            {isPublic ? 'Public' : 'Private'}
+          </Button>
+        </div>
+        
         <div className="flex space-x-2">
           <Input
             value={inputValue}
