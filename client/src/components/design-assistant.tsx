@@ -199,8 +199,10 @@ export function DesignAssistant({
         break;
       
       case 'improve':
-        if (onCodeImprove && actionData?.feedback) {
-          onCodeImprove(actionData.feedback);
+        if (onCodeImprove && actionData?.improvements) {
+          // Join all improvements into a single feedback string
+          const improvementFeedback = actionData.improvements.join('. ');
+          onCodeImprove(improvementFeedback);
           toast({
             title: "✨ Improving Layout",
             description: "Enhancing your current layout with AI suggestions..."
