@@ -114,6 +114,17 @@ The application follows a monorepo structure with clear separation between clien
 - July 01, 2025. Created tab-based navigation system switching between Create and Gallery modes
 - July 01, 2025. Cleaned up header navigation by removing Gallery and Docs links
 - July 01, 2025. Renamed "Generator" to "AI Layout Builder" for clearer branding
+- July 02, 2025. Added comprehensive authentication system with JWT tokens
+- July 02, 2025. Added automatic token refresh functionality to maintain user sessions
+- July 02, 2025. Created comprehensive authentication pages with modern UI design
+- July 02, 2025. Updated database schema to include users table with proper relationships to layouts
+- July 02, 2025. Enhanced header with user profile dropdown and logout functionality
+- July 02, 2025. Associated generated layouts with authenticated users for personalized experience
+- July 03, 2025. Removed all Google OAuth authentication functionality and related database fields (google_id, profile_image, provider)
+- July 03, 2025. Simplified authentication system to use username/password only, removed session management and passport dependencies
+- July 03, 2025. Cleaned up authentication UI by removing "Continue with Google" buttons and related functionality
+- July 03, 2025. Updated database schema to make password field required and removed Google-specific columns
+- July 03, 2025. Removed "Star on GitHub" button and related code from header component
 
 ## User Preferences
 

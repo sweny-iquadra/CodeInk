@@ -1,4 +1,4 @@
-import { Moon, Github, Code, Sparkles } from "lucide-react";
+import { Moon, Code, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function Header() {
@@ -29,10 +29,6 @@ export function Header() {
               className="text-muted-foreground hover:text-foreground hover:bg-muted/50 rounded-xl"
             >
               <Moon className="h-4 w-4" />
-            </Button>
-            <Button className="bg-gradient-to-r from-primary to-purple-600 text-primary-foreground hover:from-primary/90 hover:to-purple-600/90 shadow-lg transition-all duration-200 rounded-xl font-semibold">
-              <Github className="w-4 h-4 mr-2" />
-              Star on GitHub
             </Button>
           </div>
         </div>
