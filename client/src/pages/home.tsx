@@ -81,18 +81,8 @@ export default function Home() {
         formData.append("additionalContext", additionalContext);
       }
 
-      const response = await fetch("/api/generate-from-image", {
-        method: "POST",
-        body: formData,
-        credentials: "include",
-        signal: controller.signal,
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(errorText || response.statusText);
-      }
-
+      // Use apiRequest for proper authentication with JWT token
+      const response = await apiRequest("POST", "/api/generate-from-image", formData, controller.signal);
       return response.json();
     },
     onSuccess: (data: GenerationResult) => {
