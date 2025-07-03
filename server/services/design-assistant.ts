@@ -11,7 +11,7 @@ export interface DesignAssistantRequest {
 export interface DesignAssistantResponse {
   response: string;
   suggestions?: string[];
-  actionType?: 'generate' | 'improve' | 'recommend';
+  actionType?: 'generate' | 'improve' | 'recommend' | null;
   actionData?: any;
 }
 
@@ -24,40 +24,20 @@ export async function processDesignAssistantMessage(request: DesignAssistantRequ
     content: msg.content
   }));
 
-  const systemPrompt = `AI Design Assistant for web layouts. Help users create layouts efficiently.
+  const systemPrompt = `Design assistant. Respond ONLY with valid JSON.
 
-Capabilities: Generate layouts, provide feedback, framework recommendations.
-Current: ${currentLayout ? 'Has layout' : 'No layout'}
-
-JSON format:
+Format:
 {
-  "response": "response text",
+  "response": "helpful text",
   "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"],
-  "actionType": "generate|improve|recommend|none",
-  "actionData": {
-    "description": "layout description",
-    "framework": "tailwind|bootstrap|material-ui",
-    "additionalContext": "context",
-    "feedback": "feedback"
-  }
+  "actionType": "generate",
+  "actionData": {"description": "detailed layout description"}
 }
 
-When users describe layouts: set actionType "generate" with comprehensive description. Generate immediately.
-
-**Real-time Design Feedback:**
-When currentLayout exists, analyze it and suggest specific improvements like:
-- Layout structure improvements
-- Color scheme enhancements
-- Typography suggestions
-- Responsive design optimizations
-- Accessibility improvements
-
-**Framework Recommendations:**
-- **Tailwind CSS**: Best for custom designs, flexibility, modern utilities
-- **Bootstrap**: Best for rapid prototyping, team familiarity, enterprise
-- **Material Design**: Best for consistent Google-style UI, mobile-first apps
-
-Be enthusiastic and helpful! Focus on understanding user needs and providing valuable design guidance.`;
+Rules:
+- Always return valid JSON
+- Set actionType "generate" for layout requests
+- Keep responses concise and helpful`;
 
   try {
     const response = await openai.chat.completions.create({
@@ -72,18 +52,40 @@ Be enthusiastic and helpful! Focus on understanding user needs and providing val
       max_tokens: 400,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{}');
+    let result;
+    try {
+      const content = response.choices[0].message.content || '{}';
+      // Clean up potential JSON formatting issues
+      const cleanContent = content.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
+      result = JSON.parse(cleanContent);
+    } catch (parseError) {
+      console.error("JSON parsing error:", parseError);
+      console.error("Raw content:", response.choices[0].message.content);
+      // Fallback to safe response
+      result = {
+        response: "I'm here to help you create amazing layouts! What would you like to build?",
+        suggestions: ["Create a landing page", "Build a portfolio", "Design a dashboard"],
+        actionType: undefined,
+        actionData: undefined
+      };
+    }
     
     return {
       response: result.response || "I'm here to help you create amazing layouts! What would you like to build?",
-      suggestions: result.suggestions || [],
+      suggestions: Array.isArray(result.suggestions) ? result.suggestions : ["Create a landing page", "Build a portfolio", "Design a dashboard"],
       actionType: result.actionType,
       actionData: result.actionData
     };
 
   } catch (error) {
     console.error("Error in design assistant:", error);
-    throw new Error("Failed to process design assistant request");
+    // Return a safe fallback instead of throwing
+    return {
+      response: "I'm here to help you create amazing layouts! What would you like to build?",
+      suggestions: ["Create a landing page", "Build a portfolio", "Design a dashboard"],
+      actionType: undefined,
+      actionData: undefined
+    };
   }
 }
 

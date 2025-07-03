@@ -166,6 +166,12 @@ Preferred communication style: Simple, everyday language.
   * Integrated cancellation across all generation types: text-to-code, image-to-code, and layout improvement
   * Added proper error handling for cancelled requests with user-friendly toast notifications
   * Users can now cancel any generation process by clicking the X button in the loading modal
+- July 03, 2025. Fixed critical bug in CodeGenie chatbot that caused JSON parsing errors:
+  * Resolved "Unterminated string in JSON" error that caused 500 server responses
+  * Added robust JSON validation and error handling with fallback responses
+  * Simplified system prompts to ensure valid JSON format from AI responses
+  * Implemented content cleaning to remove control characters that break JSON parsing
+  * CodeGenie chatbot now responds reliably in ~5-6 seconds with proper suggestions
 
 ## User Preferences
 
