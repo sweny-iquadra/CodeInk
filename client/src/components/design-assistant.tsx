@@ -173,6 +173,12 @@ export function DesignAssistant({
 
   const handleSuggestionClick = (suggestion: string) => {
     setInputValue(suggestion);
+    // Auto-scroll to bottom to show the input with the suggestion
+    setTimeout(() => {
+      if (scrollAreaRef.current) {
+        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      }
+    }, 100);
   };
 
   const handleActionClick = (message: Message) => {
@@ -199,7 +205,7 @@ export function DesignAssistant({
         break;
       
       case 'improve':
-        if (onCodeImprove && actionData?.improvements) {
+        if (onCodeImprove && actionData?.improvements && currentCode) {
           // Join all improvements into a single feedback string
           const improvementFeedback = actionData.improvements.join('. ');
           onCodeImprove(improvementFeedback);
@@ -216,6 +222,12 @@ export function DesignAssistant({
             timestamp: new Date()
           };
           setMessages(prev => [...prev, systemMessage]);
+        } else if (!currentCode) {
+          toast({
+            variant: "destructive",
+            title: "No Code to Improve",
+            description: "Please generate a layout first before applying improvements."
+          });
         }
         break;
       
@@ -246,9 +258,17 @@ export function DesignAssistant({
   };
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
+    // Auto-scroll to bottom when messages update
+    const scrollToBottom = () => {
+      if (scrollAreaRef.current) {
+        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+      }
+    };
+    
+    // Use timeout to ensure DOM is updated
+    const timeoutId = setTimeout(scrollToBottom, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, [messages]);
 
   // Chat icon button when not open
