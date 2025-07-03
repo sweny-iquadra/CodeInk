@@ -98,7 +98,7 @@ export default function Home() {
   const improveMutation = useMutation({
     mutationFn: async (feedback: string) => {
       const response = await apiRequest("POST", "/api/improve-layout", {
-        htmlCode: currentCode,
+        code: currentCode,
         feedback,
       });
       return response.json();

@@ -176,7 +176,11 @@ export function DesignAssistant({
     // Auto-scroll to bottom to show the input with the suggestion
     setTimeout(() => {
       if (scrollAreaRef.current) {
-        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+        // Find the scrollable element inside ScrollArea
+        const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollElement) {
+          scrollElement.scrollTop = scrollElement.scrollHeight;
+        }
       }
     }, 100);
   };
@@ -261,7 +265,11 @@ export function DesignAssistant({
     // Auto-scroll to bottom when messages update
     const scrollToBottom = () => {
       if (scrollAreaRef.current) {
-        scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
+        // Find the scrollable element inside ScrollArea
+        const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollElement) {
+          scrollElement.scrollTop = scrollElement.scrollHeight;
+        }
       }
     };
     
