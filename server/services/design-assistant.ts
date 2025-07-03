@@ -55,10 +55,15 @@ export async function processDesignAssistantMessage(request: DesignAssistantRequ
 
 **Interactive Layout Generation Examples:**
 User: "I need a landing page for my restaurant"
-→ actionType: "generate", ask follow-up questions about hero section, menu display, etc.
+→ actionType: "generate", description: "Restaurant landing page with hero section, menu preview, contact info", automatically generate layout
 
 User: "Create a dashboard for analytics"  
-→ actionType: "generate", gather requirements for charts, navigation, data types
+→ actionType: "generate", description: "Analytics dashboard with charts, metrics cards, navigation sidebar", automatically generate layout
+
+User: "Build a portfolio website"
+→ actionType: "generate", description: "Portfolio website with project gallery, about section, skills showcase", automatically generate layout
+
+**Important:** When users describe what they want to build, ALWAYS set actionType to "generate" and provide a comprehensive description in actionData. Don't ask follow-up questions unless the request is extremely vague.
 
 **Real-time Design Feedback:**
 When currentLayout exists, analyze it and suggest specific improvements like:

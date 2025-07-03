@@ -44,13 +44,14 @@ export function DesignAssistant({
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
-      content: "👋 Hi! I'm your AI Design Assistant. I can help you create layouts, provide design feedback, and recommend the best frameworks for your project. What would you like to build today?",
+      content: "Hi! I'm your AI Design Assistant. I can instantly create layouts, provide design feedback, and recommend frameworks. Just describe what you want to build and I'll generate it immediately!",
       sender: "assistant",
       timestamp: new Date(),
       suggestions: [
         "Create a landing page for my restaurant",
-        "I need a dashboard for analytics", 
-        "Design a portfolio website"
+        "Build a dashboard for analytics", 
+        "Design a portfolio website",
+        "Make an e-commerce product page"
       ]
     }
   ]);
@@ -83,6 +84,14 @@ export function DesignAssistant({
         actionData: data.actionData
       };
       setMessages(prev => [...prev, assistantMessage]);
+
+      // Auto-execute actions for better interactivity
+      if (data.actionType === 'generate' && data.actionData) {
+        // Immediately trigger code generation for instant results
+        setTimeout(() => {
+          handleActionClick(assistantMessage);
+        }, 500); // Quick execution for immediate feedback
+      }
     },
     onError: (error) => {
       toast({
@@ -171,9 +180,18 @@ export function DesignAssistant({
         if (onCodeGenerate && actionData?.description) {
           onCodeGenerate(actionData.description, actionData.additionalContext);
           toast({
-            title: "Generating Layout",
-            description: "Creating your layout based on the conversation..."
+            title: "🎨 Generating Layout",
+            description: "Creating your layout based on our conversation..."
           });
+          
+          // Add a system message to show generation is in progress
+          const systemMessage: Message = {
+            id: `system-${Date.now()}`,
+            content: "🔄 Generating your layout now... This will appear in the preview once complete!",
+            sender: "assistant",
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, systemMessage]);
         }
         break;
       
@@ -181,17 +199,25 @@ export function DesignAssistant({
         if (onCodeImprove && actionData?.feedback) {
           onCodeImprove(actionData.feedback);
           toast({
-            title: "Improving Layout",
-            description: "Enhancing your current layout..."
+            title: "✨ Improving Layout",
+            description: "Enhancing your current layout with AI suggestions..."
           });
+          
+          // Add a system message to show improvement is in progress
+          const systemMessage: Message = {
+            id: `system-${Date.now()}`,
+            content: "🔄 Applying improvements to your layout... Check the preview for updates!",
+            sender: "assistant",
+            timestamp: new Date()
+          };
+          setMessages(prev => [...prev, systemMessage]);
         }
         break;
       
       case 'recommend':
-        // Framework recommendation - could trigger a modal or additional info
         toast({
-          title: "Framework Recommendation",
-          description: `${actionData?.framework} is recommended for your project`
+          title: "📋 Framework Recommendation",
+          description: `${actionData?.framework?.toUpperCase()} is recommended for your project`
         });
         break;
     }
