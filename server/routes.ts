@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertLayoutSchema } from "@shared/schema";
 import multer from "multer";
 import { generateCodeFromDescription, analyzeImageAndGenerateCode, explainCode, improveLayout } from "./services/openai";
+import { processDesignAssistantMessage, generateFrameworkRecommendation, analyzeLayoutAndSuggestImprovements } from "./services/design-assistant";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -46,9 +47,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json({ ...result, id: layout.id });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error generating code from text:", error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -74,9 +75,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
 
       res.json({ ...result, id: layout.id });
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error generating code from image:", error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -86,9 +87,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = parseInt(req.query.limit as string) || 3;
       const layouts = await storage.getLayouts(limit);
       res.json(layouts);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error fetching layouts:", error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -98,9 +99,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const limit = parseInt(req.query.limit as string) || 10;
       const layouts = await storage.getPublicLayouts(limit);
       res.json(layouts);
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Error fetching public layouts:", error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 
@@ -185,6 +186,60 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error improving layout:", error);
       res.status(500).json({ message: error.message });
+    }
+  });
+
+  // AI Design Assistant Chatbot endpoints
+  app.post("/api/design-assistant/chat", async (req, res) => {
+    try {
+      const { message, currentLayout, conversationHistory } = req.body;
+      
+      if (!message) {
+        return res.status(400).json({ message: "Message is required" });
+      }
+
+      const result = await processDesignAssistantMessage({
+        message,
+        currentLayout,
+        conversationHistory
+      });
+
+      res.json(result);
+    } catch (error: unknown) {
+      console.error("Error in design assistant chat:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.post("/api/design-assistant/framework-recommendation", async (req, res) => {
+    try {
+      const { requirements } = req.body;
+      
+      if (!requirements) {
+        return res.status(400).json({ message: "Requirements are required" });
+      }
+
+      const result = await generateFrameworkRecommendation(requirements);
+      res.json(result);
+    } catch (error: unknown) {
+      console.error("Error generating framework recommendation:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  app.post("/api/design-assistant/analyze-layout", async (req, res) => {
+    try {
+      const { htmlCode } = req.body;
+      
+      if (!htmlCode) {
+        return res.status(400).json({ message: "HTML code is required" });
+      }
+
+      const result = await analyzeLayoutAndSuggestImprovements(htmlCode);
+      res.json(result);
+    } catch (error: unknown) {
+      console.error("Error analyzing layout:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
     }
   });
 

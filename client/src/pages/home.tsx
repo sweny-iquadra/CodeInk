@@ -8,6 +8,7 @@ import { OutputPanel } from "@/components/output-panel";
 import { HistoryPanel } from "@/components/history-panel";
 import { Gallery } from "@/components/gallery";
 import { LoadingModal } from "@/components/loading-modal";
+import { DesignAssistant } from "@/components/design-assistant";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { Home as HomeIcon, Image } from "lucide-react";
@@ -94,6 +95,33 @@ export default function Home() {
     },
   });
 
+  const improveMutation = useMutation({
+    mutationFn: async (feedback: string) => {
+      const response = await apiRequest("POST", "/api/improve-layout", {
+        htmlCode: currentCode,
+        feedback,
+      });
+      return response.json();
+    },
+    onSuccess: (data: GenerationResult) => {
+      setCurrentCode(data.html);
+      setCurrentTitle(data.title);
+      setIsReady(true);
+      queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
+      toast({
+        title: "Layout improved!",
+        description: "Your layout has been enhanced based on AI feedback.",
+      });
+    },
+    onError: (error) => {
+      toast({
+        variant: "destructive",
+        title: "Improvement failed",
+        description: error.message,
+      });
+    },
+  });
+
   const handleGenerate = (data: { 
     type: 'text' | 'image'; 
     description?: string; 
@@ -130,7 +158,21 @@ export default function Home() {
     queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
   };
 
-  const isLoading = generateFromTextMutation.isPending || generateFromImageMutation.isPending;
+  const handleAssistantCodeGenerate = (description: string, additionalContext?: string) => {
+    generateFromTextMutation.mutate({
+      description,
+      additionalContext,
+    });
+  };
+
+  const handleAssistantCodeImprove = (feedback: string) => {
+    if (currentCode) {
+      // Use the improve layout API
+      improveMutation.mutate(feedback);
+    }
+  };
+
+  const isLoading = generateFromTextMutation.isPending || generateFromImageMutation.isPending || improveMutation.isPending;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-muted/30 to-background">
@@ -204,6 +246,13 @@ export default function Home() {
       <Footer />
       
       <LoadingModal open={isLoading} />
+      
+      {/* AI Design Assistant Chatbot */}
+      <DesignAssistant 
+        currentCode={currentCode}
+        onCodeGenerate={handleAssistantCodeGenerate}
+        onCodeImprove={handleAssistantCodeImprove}
+      />
     </div>
   );
 }
