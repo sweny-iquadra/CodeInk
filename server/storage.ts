@@ -3,26 +3,35 @@ import { db } from "./db";
 import { eq, desc } from "drizzle-orm";
 
 export interface IStorage {
-  getUser(id: number): Promise<User | undefined>;
+  // User management
+  getUserById(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Layout management
   createLayout(layout: InsertLayout): Promise<GeneratedLayout>;
   getLayouts(limit?: number): Promise<GeneratedLayout[]>;
-  getLayout(id: number): Promise<GeneratedLayout | undefined>;
+  getUserLayouts(userId: number, limit?: number): Promise<GeneratedLayout[]>;
   getPublicLayouts(limit?: number): Promise<GeneratedLayout[]>;
-  updateLayoutVisibility(id: number, isPublic: boolean): Promise<GeneratedLayout | undefined>;
+  getLayout(id: number): Promise<GeneratedLayout | undefined>;
+  updateLayoutVisibility(id: number, isPublic: boolean, userId: number): Promise<GeneratedLayout | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
-  async getUser(id: number): Promise<User | undefined> {
+  // User management methods
+  async getUserById(id: number): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.id, id));
     return user || undefined;
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
     const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async getUserByEmail(email: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.email, email));
     return user || undefined;
   }
 
@@ -34,6 +43,7 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  // Layout management methods
   async createLayout(insertLayout: InsertLayout): Promise<GeneratedLayout> {
     const [layout] = await db
       .insert(generatedLayouts)
@@ -55,9 +65,14 @@ export class DatabaseStorage implements IStorage {
     return layouts;
   }
 
-  async getLayout(id: number): Promise<GeneratedLayout | undefined> {
-    const [layout] = await db.select().from(generatedLayouts).where(eq(generatedLayouts.id, id));
-    return layout || undefined;
+  async getUserLayouts(userId: number, limit = 10): Promise<GeneratedLayout[]> {
+    const layouts = await db
+      .select()
+      .from(generatedLayouts)
+      .where(eq(generatedLayouts.userId, userId))
+      .orderBy(desc(generatedLayouts.createdAt))
+      .limit(limit);
+    return layouts;
   }
 
   async getPublicLayouts(limit = 10): Promise<GeneratedLayout[]> {
@@ -70,7 +85,12 @@ export class DatabaseStorage implements IStorage {
     return layouts;
   }
 
-  async updateLayoutVisibility(id: number, isPublic: boolean): Promise<GeneratedLayout | undefined> {
+  async getLayout(id: number): Promise<GeneratedLayout | undefined> {
+    const [layout] = await db.select().from(generatedLayouts).where(eq(generatedLayouts.id, id));
+    return layout || undefined;
+  }
+
+  async updateLayoutVisibility(id: number, isPublic: boolean, userId: number): Promise<GeneratedLayout | undefined> {
     const [layout] = await db
       .update(generatedLayouts)
       .set({ isPublic })

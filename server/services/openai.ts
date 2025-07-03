@@ -1,9 +1,20 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import OpenAI from "openai";
 
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
-const openai = new OpenAI({ 
-  apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key" 
-});
+// const openai = new OpenAI({
+//   apiKey: process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY_ENV_VAR || "default_key"
+// });
+
+const apiKey = process.env.OPENAI_API_KEY;
+
+if (!apiKey) {
+  throw new Error("Missing OpenAI API key. Set OPENAI_API_KEY in your .env file.");
+}
+
+const openai = new OpenAI({ apiKey });
 
 export interface CodeGenerationRequest {
   description: string;
@@ -55,7 +66,7 @@ Generate clean, semantic HTML with proper Tailwind CSS classes for styling and r
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
-    
+
     return {
       html: result.html || "",
       title: result.title || "Generated Layout",
@@ -119,7 +130,7 @@ Focus on matching the layout structure, component arrangement, and overall visua
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
-    
+
     return {
       html: result.html || "",
       title: result.title || "Generated Layout from Image",
@@ -191,7 +202,7 @@ Make it more modern, accessible, and visually appealing while maintaining the co
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
-    
+
     return {
       html: result.html || htmlCode,
       title: result.title || "Improved Layout",
