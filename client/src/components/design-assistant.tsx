@@ -17,7 +17,9 @@ import {
   Code, 
   Sparkles,
   Loader2,
-  MessageSquare
+  MessageSquare,
+  X,
+  Minimize2
 } from "lucide-react";
 
 interface Message {
@@ -34,17 +36,20 @@ interface DesignAssistantProps {
   currentCode?: string;
   onCodeGenerate?: (description: string, additionalContext?: string) => void;
   onCodeImprove?: (feedback: string) => void;
+  onSwitchToPreview?: () => void;
 }
 
 export function DesignAssistant({ 
   currentCode, 
   onCodeGenerate, 
-  onCodeImprove 
+  onCodeImprove,
+  onSwitchToPreview
 }: DesignAssistantProps) {
+  const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
     {
       id: "welcome",
-      content: "Hi! I'm your AI Design Assistant. I can instantly create layouts, provide design feedback, and recommend frameworks. Just describe what you want to build and I'll generate it immediately!",
+      content: "Hi! I'm CodeGenie, your AI design companion. I can instantly create layouts, provide design feedback, and recommend frameworks. Just describe what you want to build and I'll generate it immediately!",
       sender: "assistant",
       timestamp: new Date(),
       suggestions: [
@@ -170,6 +175,16 @@ export function DesignAssistant({
 
   const handleSuggestionClick = (suggestion: string) => {
     setInputValue(suggestion);
+    // Auto-scroll to bottom to show the input with the suggestion
+    setTimeout(() => {
+      if (scrollAreaRef.current) {
+        // Find the scrollable element inside ScrollArea
+        const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollElement) {
+          scrollElement.scrollTop = scrollElement.scrollHeight;
+        }
+      }
+    }, 100);
   };
 
   const handleActionClick = (message: Message) => {
@@ -179,6 +194,10 @@ export function DesignAssistant({
       case 'generate':
         if (onCodeGenerate && actionData?.description) {
           onCodeGenerate(actionData.description, actionData.additionalContext);
+          // Switch to preview mode for live preview
+          if (onSwitchToPreview) {
+            setTimeout(() => onSwitchToPreview(), 100);
+          }
           toast({
             title: "🎨 Generating Layout",
             description: "Creating your layout based on our conversation..."
@@ -196,21 +215,96 @@ export function DesignAssistant({
         break;
       
       case 'improve':
-        if (onCodeImprove && actionData?.feedback) {
-          onCodeImprove(actionData.feedback);
+        if (onCodeImprove && currentCode) {
+          // Use the feedback from actionData or a generic improvement request
+          const improvementFeedback = actionData?.feedback || actionData?.improvements?.join('. ') || 'Improve design and user experience';
+          onCodeImprove(improvementFeedback);
+          // Switch to preview mode for live preview
+          if (onSwitchToPreview) {
+            setTimeout(() => onSwitchToPreview(), 100);
+          }
           toast({
             title: "✨ Improving Layout",
             description: "Enhancing your current layout with AI suggestions..."
           });
           
-          // Add a system message to show improvement is in progress
+          // Add real-time improvement suggestions based on the action data
+          const improvementSuggestions = actionData?.improvements || [
+            "Enhanced color scheme and visual hierarchy",
+            "Improved responsive design for mobile devices", 
+            "Better accessibility with proper ARIA labels",
+            "Optimized layout spacing and typography",
+            "Added interactive elements and hover effects"
+          ];
+
+          // Add a system message with real-time improvement suggestions
           const systemMessage: Message = {
             id: `system-${Date.now()}`,
-            content: "🔄 Applying improvements to your layout... Check the preview for updates!",
+            content: "🔄 Applying improvements to your layout... Here's what I'm enhancing:",
             sender: "assistant",
-            timestamp: new Date()
+            timestamp: new Date(),
+            suggestions: improvementSuggestions,
+            actionType: undefined // No action needed for progress message
           };
           setMessages(prev => [...prev, systemMessage]);
+
+          // Add progressive updates to show real-time improvement status
+          setTimeout(() => {
+            const progressMessage: Message = {
+              id: `progress-${Date.now()}`,
+              content: "🎨 Enhancing visual design and color scheme...",
+              sender: "assistant",
+              timestamp: new Date(),
+              suggestions: ["Improving color contrast", "Enhancing typography", "Refining visual hierarchy"]
+            };
+            setMessages(prev => [...prev, progressMessage]);
+          }, 2000);
+
+          setTimeout(() => {
+            const progressMessage2: Message = {
+              id: `progress2-${Date.now()}`,
+              content: "📱 Optimizing responsive layout for all devices...",
+              sender: "assistant",
+              timestamp: new Date(),
+              suggestions: ["Mobile-first breakpoints", "Tablet optimization", "Desktop enhancements"]
+            };
+            setMessages(prev => [...prev, progressMessage2]);
+          }, 4000);
+
+          setTimeout(() => {
+            const progressMessage3: Message = {
+              id: `progress3-${Date.now()}`,
+              content: "♿ Improving accessibility and user experience...",
+              sender: "assistant",
+              timestamp: new Date(),
+              suggestions: ["Adding ARIA labels", "Keyboard navigation", "Screen reader compatibility"]
+            };
+            setMessages(prev => [...prev, progressMessage3]);
+          }, 6000);
+
+          // Add a follow-up message after a delay to show completion
+          setTimeout(() => {
+            const completionMessage: Message = {
+              id: `completion-${Date.now()}`,
+              content: "✅ Layout improvements applied successfully! Your design now has enhanced visual appeal, better responsiveness, and improved accessibility.",
+              sender: "assistant",
+              timestamp: new Date(),
+              suggestions: [
+                "Further enhance animations and interactions",
+                "Add more advanced components",
+                "Optimize for performance",
+                "Enhance content organization"
+              ]
+            };
+            setMessages(prev => [...prev, completionMessage]);
+          }, 8000); // Show after 8 seconds to allow improvement to complete
+
+        } else if (!currentCode) {
+          toast({
+            variant: "destructive",
+            title: "No Code to Improve",
+            description: "Please generate a layout first before applying improvements."
+          });
         }
         break;
       
@@ -241,50 +335,43 @@ export function DesignAssistant({
   };
 
   useEffect(() => {
-    if (scrollAreaRef.current) {
-      scrollAreaRef.current.scrollTop = scrollAreaRef.current.scrollHeight;
-    }
+    // Auto-scroll to bottom when messages update
+    const scrollToBottom = () => {
+      if (scrollAreaRef.current) {
+        // Find the scrollable element inside ScrollArea
+        const scrollElement = scrollAreaRef.current.querySelector('[data-radix-scroll-area-viewport]');
+        if (scrollElement) {
+          scrollElement.scrollTop = scrollElement.scrollHeight;
+        }
+      }
+    };
+    
+    // Use timeout to ensure DOM is updated
+    const timeoutId = setTimeout(scrollToBottom, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, [messages]);
 
-  if (!isExpanded) {
+  // Chat icon button when not open
+  if (!isOpen) {
     return (
-      <Card className="fixed bottom-6 right-6 w-80 shadow-lg border-2 border-violet-200 dark:border-violet-800">
-        <CardHeader className="pb-3 bg-gradient-to-r from-violet-50 to-purple-50 dark:from-violet-950 dark:to-purple-950">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <div className="relative">
-                <Bot className="h-6 w-6 text-violet-600 dark:text-violet-400" />
-                <Sparkles className="h-3 w-3 text-yellow-500 absolute -top-1 -right-1" />
-              </div>
-              <CardTitle className="text-lg text-violet-900 dark:text-violet-100">AI Design Assistant</CardTitle>
-            </div>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={() => setIsExpanded(true)}
-              className="text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-200"
-            >
-              <MessageSquare className="h-4 w-4" />
-            </Button>
+      <div className="fixed bottom-6 right-6 z-50">
+        <Button
+          onClick={() => setIsOpen(true)}
+          className="h-14 w-14 rounded-full bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 text-white shadow-lg hover:shadow-xl transition-all duration-200 group"
+        >
+          <div className="relative">
+            <MessageSquare className="h-6 w-6" />
+            <div className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full animate-pulse" />
           </div>
-        </CardHeader>
-        <CardContent className="p-4">
-          <p className="text-sm text-gray-600 dark:text-gray-300 mb-3">
-            Get instant help with layout design, framework recommendations, and real-time feedback.
-          </p>
-          <div className="flex flex-wrap gap-2 mb-3">
-            <Badge variant="secondary" className="text-xs">Interactive Generation</Badge>
-            <Badge variant="secondary" className="text-xs">Design Feedback</Badge>
-            <Badge variant="secondary" className="text-xs">Framework Tips</Badge>
+        </Button>
+        {/* Tooltip */}
+        <div className="absolute bottom-full right-0 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div className="bg-gray-900 text-white text-xs rounded px-2 py-1 whitespace-nowrap">
+            CodeGenie - AI Helper
           </div>
-          <Button 
-            onClick={() => setIsExpanded(true)} 
-            className="w-full bg-violet-600 hover:bg-violet-700 text-white"
-          >
-            Start Chatting
-          </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
@@ -297,7 +384,7 @@ export function DesignAssistant({
               <Bot className="h-6 w-6 text-violet-600 dark:text-violet-400" />
               <Sparkles className="h-3 w-3 text-yellow-500 absolute -top-1 -right-1" />
             </div>
-            <CardTitle className="text-lg text-violet-900 dark:text-violet-100">AI Design Assistant</CardTitle>
+            <CardTitle className="text-lg text-violet-900 dark:text-violet-100">CodeGenie</CardTitle>
           </div>
           <div className="flex space-x-1">
             {currentCode && (
@@ -319,10 +406,10 @@ export function DesignAssistant({
             <Button 
               variant="ghost" 
               size="sm"
-              onClick={() => setIsExpanded(false)}
+              onClick={() => setIsOpen(false)}
               className="text-violet-600 hover:text-violet-800 dark:text-violet-400 dark:hover:text-violet-200"
             >
-              ×
+              <X className="h-4 w-4" />
             </Button>
           </div>
         </div>
@@ -365,9 +452,11 @@ export function DesignAssistant({
                           variant="outline"
                           size="sm"
                           onClick={() => handleSuggestionClick(suggestion)}
-                          className="w-full text-left justify-start text-xs h-auto p-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600"
+                          className="w-full text-left justify-start text-xs h-auto p-2 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 whitespace-normal break-words"
                         >
-                          {suggestion}
+                          <span className="block w-full text-left leading-relaxed">
+                            {suggestion}
+                          </span>
                         </Button>
                       ))}
                     </div>

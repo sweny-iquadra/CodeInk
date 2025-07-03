@@ -11,7 +11,7 @@ export interface DesignAssistantRequest {
 export interface DesignAssistantResponse {
   response: string;
   suggestions?: string[];
-  actionType?: 'generate' | 'improve' | 'recommend';
+  actionType?: 'generate' | 'improve' | 'recommend' | null;
   actionData?: any;
 }
 
@@ -24,87 +24,68 @@ export async function processDesignAssistantMessage(request: DesignAssistantRequ
     content: msg.content
   }));
 
-  const systemPrompt = `You are an expert AI Design Assistant for a web layout generation tool called Codink. Your role is to help users create beautiful, responsive web layouts through conversational interaction.
+  const systemPrompt = `Design assistant. Respond ONLY with valid JSON.
 
-**Your Capabilities:**
-1. **Interactive Layout Generation**: Help users describe layouts conversationally and generate specific requirements
-2. **Real-time Design Feedback**: Analyze existing layouts and suggest improvements
-3. **Framework Recommendations**: Suggest the best CSS framework (Tailwind, Bootstrap, Material Design) based on requirements
-
-**Current Layout Context:** ${currentLayout ? 'User has a current layout loaded' : 'No current layout'}
-
-**Response Format:** Always respond with JSON in this exact format:
+Format:
 {
-  "response": "Your conversational response to the user",
-  "suggestions": ["Quick suggestion 1", "Quick suggestion 2", "Quick suggestion 3"],
-  "actionType": "generate|improve|recommend|none",
-  "actionData": {
-    // Include relevant data based on actionType
-    "description": "Layout description for generation",
-    "framework": "tailwind|bootstrap|material-ui",
-    "additionalContext": "Any additional context",
-    "feedback": "Improvement feedback"
-  }
+  "response": "helpful text",
+  "suggestions": ["suggestion 1", "suggestion 2", "suggestion 3"],
+  "actionType": "generate",
+  "actionData": {"description": "detailed layout description"}
 }
 
-**Action Types:**
-- **generate**: When user wants to create a new layout
-- **improve**: When user wants to enhance existing layout  
-- **recommend**: When user asks for framework or design advice
-- **none**: For general conversation
-
-**Interactive Layout Generation Examples:**
-User: "I need a landing page for my restaurant"
-→ actionType: "generate", description: "Restaurant landing page with hero section, menu preview, contact info", automatically generate layout
-
-User: "Create a dashboard for analytics"  
-→ actionType: "generate", description: "Analytics dashboard with charts, metrics cards, navigation sidebar", automatically generate layout
-
-User: "Build a portfolio website"
-→ actionType: "generate", description: "Portfolio website with project gallery, about section, skills showcase", automatically generate layout
-
-**Important:** When users describe what they want to build, ALWAYS set actionType to "generate" and provide a comprehensive description in actionData. Don't ask follow-up questions unless the request is extremely vague.
-
-**Real-time Design Feedback:**
-When currentLayout exists, analyze it and suggest specific improvements like:
-- Layout structure improvements
-- Color scheme enhancements
-- Typography suggestions
-- Responsive design optimizations
-- Accessibility improvements
-
-**Framework Recommendations:**
-- **Tailwind CSS**: Best for custom designs, flexibility, modern utilities
-- **Bootstrap**: Best for rapid prototyping, team familiarity, enterprise
-- **Material Design**: Best for consistent Google-style UI, mobile-first apps
-
-Be enthusiastic and helpful! Focus on understanding user needs and providing valuable design guidance.`;
+Rules:
+- Always return valid JSON
+- Set actionType "generate" for layout requests
+- Keep responses concise and helpful`;
 
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         ...contextMessages,
         { role: "user", content: message }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
-      max_tokens: 1000,
+      temperature: 0.3,
+      max_tokens: 400,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || '{}');
+    let result;
+    try {
+      const content = response.choices[0].message.content || '{}';
+      // Clean up potential JSON formatting issues
+      const cleanContent = content.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
+      result = JSON.parse(cleanContent);
+    } catch (parseError) {
+      console.error("JSON parsing error:", parseError);
+      console.error("Raw content:", response.choices[0].message.content);
+      // Fallback to safe response
+      result = {
+        response: "I'm here to help you create amazing layouts! What would you like to build?",
+        suggestions: ["Create a landing page", "Build a portfolio", "Design a dashboard"],
+        actionType: undefined,
+        actionData: undefined
+      };
+    }
     
     return {
       response: result.response || "I'm here to help you create amazing layouts! What would you like to build?",
-      suggestions: result.suggestions || [],
+      suggestions: Array.isArray(result.suggestions) ? result.suggestions : ["Create a landing page", "Build a portfolio", "Design a dashboard"],
       actionType: result.actionType,
       actionData: result.actionData
     };
 
   } catch (error) {
     console.error("Error in design assistant:", error);
-    throw new Error("Failed to process design assistant request");
+    // Return a safe fallback instead of throwing
+    return {
+      response: "I'm here to help you create amazing layouts! What would you like to build?",
+      suggestions: ["Create a landing page", "Build a portfolio", "Design a dashboard"],
+      actionType: undefined,
+      actionData: undefined
+    };
   }
 }
 
@@ -115,7 +96,7 @@ export async function generateFrameworkRecommendation(requirements: string): Pro
 }> {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
@@ -143,6 +124,7 @@ Respond with JSON:
       ],
       response_format: { type: "json_object" },
       temperature: 0.3,
+      max_tokens: 400,
     });
 
     return JSON.parse(response.choices[0].message.content || '{}');
@@ -159,26 +141,26 @@ export async function analyzeLayoutAndSuggestImprovements(htmlCode: string): Pro
 }> {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: `You are a web design expert. Analyze HTML layouts and suggest specific improvements.
+          content: `Web design expert. Analyze layouts and suggest specific, actionable improvements.
 
-Focus on:
-- Layout structure and organization
-- Responsive design
-- Accessibility
-- Visual hierarchy
-- User experience
-- Performance optimization
-
-Respond with JSON:
+Return JSON:
 {
-  "improvements": ["Specific improvement 1", "Specific improvement 2", "Specific improvement 3"],
-  "reasoning": "Overall analysis of the layout's strengths and weaknesses",
+  "improvements": [
+    "Add hover effects to interactive elements",
+    "Improve color contrast for better accessibility", 
+    "Enhance mobile responsive breakpoints",
+    "Optimize typography hierarchy and spacing",
+    "Include loading states and animations"
+  ],
+  "reasoning": "Brief analysis summary",
   "priority": "low|medium|high"
-}`
+}
+
+Focus on: layout structure, responsive design, accessibility, visual hierarchy, UX, performance.`
         },
         {
           role: "user",
@@ -187,6 +169,7 @@ Respond with JSON:
       ],
       response_format: { type: "json_object" },
       temperature: 0.4,
+      max_tokens: 500,
     });
 
     return JSON.parse(response.choices[0].message.content || '{}');

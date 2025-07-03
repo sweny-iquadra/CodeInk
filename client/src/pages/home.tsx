@@ -25,21 +25,28 @@ export default function Home() {
   const [currentCode, setCurrentCode] = useState("");
   const [currentTitle, setCurrentTitle] = useState("");
   const [isReady, setIsReady] = useState(false);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
+  const [outputTab, setOutputTab] = useState("code");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const generateFromTextMutation = useMutation({
     mutationFn: async ({ description, additionalContext }: { description: string; additionalContext?: string }) => {
+      const controller = new AbortController();
+      setAbortController(controller);
+      
       const response = await apiRequest("POST", "/api/generate-from-text", {
         description,
         additionalContext,
-      });
+      }, controller.signal);
       return response.json();
     },
     onSuccess: (data: GenerationResult) => {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
       setIsReady(true);
+      setOutputTab("preview"); // Auto-switch to preview for live preview
+      setAbortController(null);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({
         title: "Code generated successfully!",
@@ -47,6 +54,14 @@ export default function Home() {
       });
     },
     onError: (error) => {
+      setAbortController(null);
+      if (error.name === 'AbortError') {
+        toast({
+          title: "Generation cancelled",
+          description: "Code generation was cancelled by user.",
+        });
+        return;
+      }
       toast({
         variant: "destructive",
         title: "Generation failed",
@@ -57,16 +72,28 @@ export default function Home() {
 
   const generateFromImageMutation = useMutation({
     mutationFn: async ({ file, additionalContext }: { file: File; additionalContext?: string }) => {
+      const controller = new AbortController();
+      setAbortController(controller);
+      
       const formData = new FormData();
       formData.append("image", file);
       if (additionalContext) {
         formData.append("additionalContext", additionalContext);
       }
 
+      // Use authenticated fetch with JWT token for file uploads
+      const accessToken = localStorage.getItem("auth_token");
+      const headers: Record<string, string> = {};
+      if (accessToken) {
+        headers["Authorization"] = `Bearer ${accessToken}`;
+      }
+
       const response = await fetch("/api/generate-from-image", {
         method: "POST",
+        headers,
         body: formData,
         credentials: "include",
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -80,6 +107,8 @@ export default function Home() {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
       setIsReady(true);
+      setOutputTab("preview"); // Auto-switch to preview for live preview
+      setAbortController(null);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({
         title: "Code generated from image!",
@@ -87,6 +116,14 @@ export default function Home() {
       });
     },
     onError: (error) => {
+      setAbortController(null);
+      if (error.name === 'AbortError') {
+        toast({
+          title: "Generation cancelled",
+          description: "Image generation was cancelled by user.",
+        });
+        return;
+      }
       toast({
         variant: "destructive",
         title: "Image analysis failed",
@@ -97,16 +134,21 @@ export default function Home() {
 
   const improveMutation = useMutation({
     mutationFn: async (feedback: string) => {
+      const controller = new AbortController();
+      setAbortController(controller);
+      
       const response = await apiRequest("POST", "/api/improve-layout", {
-        htmlCode: currentCode,
+        code: currentCode,
         feedback,
-      });
+      }, controller.signal);
       return response.json();
     },
     onSuccess: (data: GenerationResult) => {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
       setIsReady(true);
+      setOutputTab("preview"); // Auto-switch to preview for live preview
+      setAbortController(null);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({
         title: "Layout improved!",
@@ -114,6 +156,14 @@ export default function Home() {
       });
     },
     onError: (error) => {
+      setAbortController(null);
+      if (error.name === 'AbortError') {
+        toast({
+          title: "Improvement cancelled",
+          description: "Layout improvement was cancelled by user.",
+        });
+        return;
+      }
       toast({
         variant: "destructive",
         title: "Improvement failed",
@@ -172,6 +222,13 @@ export default function Home() {
     }
   };
 
+  const handleCancelGeneration = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
+    }
+  };
+
   const isLoading = generateFromTextMutation.isPending || generateFromImageMutation.isPending || improveMutation.isPending;
 
   return (
@@ -219,6 +276,8 @@ export default function Home() {
                   title={currentTitle}
                   isReady={isReady}
                   onLayoutImproved={handleLayoutImproved}
+                  activeTab={outputTab}
+                  onTabChange={setOutputTab}
                 />
               </div>
             </div>
@@ -236,6 +295,8 @@ export default function Home() {
                   title={currentTitle}
                   isReady={isReady}
                   onLayoutImproved={handleLayoutImproved}
+                  activeTab={outputTab}
+                  onTabChange={setOutputTab}
                 />
               </div>
             </div>
@@ -245,13 +306,14 @@ export default function Home() {
 
       <Footer />
       
-      <LoadingModal open={isLoading} />
+      <LoadingModal open={isLoading} onCancel={handleCancelGeneration} />
       
       {/* AI Design Assistant Chatbot */}
       <DesignAssistant 
         currentCode={currentCode}
         onCodeGenerate={handleAssistantCodeGenerate}
         onCodeImprove={handleAssistantCodeImprove}
+        onSwitchToPreview={() => setOutputTab("preview")}
       />
     </div>
   );

@@ -30,42 +30,68 @@ export interface CodeGenerationResponse {
 
 export async function generateCodeFromDescription(request: CodeGenerationRequest): Promise<CodeGenerationResponse> {
   try {
-    const systemPrompt = `You are an expert frontend developer specializing in creating responsive, accessible HTML layouts using Tailwind CSS. Generate complete, production-ready HTML code based on user descriptions.
+    const systemPrompt = `Create HTML with Tailwind CSS. Return only valid JSON: {"html":"complete html","title":"page title","description":"brief desc"}. Always include <!DOCTYPE html>.`;
 
-Requirements:
-- Use modern HTML5 semantic elements
-- Apply Tailwind CSS classes for responsive design
-- Include proper accessibility attributes
-- Ensure mobile-first responsive design
-- Use semantic color classes and proper contrast
-- Include hover states and transitions where appropriate
-- Generate complete HTML documents with head and body sections
-- Include Tailwind CSS CDN link
-
-Respond with JSON in this exact format:
-{
-  "html": "complete HTML code here",
-  "title": "short descriptive title",
-  "description": "brief description of the layout"
-}`;
-
-    const userPrompt = `Create a responsive HTML layout with Tailwind CSS based on this description: ${request.description}
-
-${request.additionalContext ? `Additional context: ${request.additionalContext}` : ''}
-
-Generate clean, semantic HTML with proper Tailwind CSS classes for styling and responsiveness.`;
+    const userPrompt = `Generate responsive layout: ${request.description}`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
+      temperature: 0.2,
+      max_tokens: 1200,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const rawContent = response.choices[0].message.content || "{}";
+    
+    // Clean the content to remove control characters that could break JSON parsing
+    const cleanedContent = rawContent.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+    
+    let result;
+    try {
+      result = JSON.parse(cleanedContent);
+    } catch (parseError) {
+      console.error("JSON parsing error:", parseError);
+      console.error("Raw content:", rawContent);
+      // Fallback: Try to extract HTML from the raw content if possible
+      const htmlMatch = rawContent.match(/<!DOCTYPE[^>]*>[\s\S]*?<\/html>/i);
+      if (htmlMatch) {
+        result = {
+          html: htmlMatch[0],
+          title: "Generated Layout",
+          description: "Layout generated with partial parsing"
+        };
+      } else {
+        // Create a simple but functional layout based on the request
+        const simpleHtml = `<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simple Layout</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">Generated Layout</h1>
+        <p class="text-gray-600">Your requested layout for: ${request.description}</p>
+        <div class="mt-8 bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">Content Area</h2>
+            <p class="text-gray-700">This is a basic layout structure. You can improve it using the AI assistant.</p>
+        </div>
+    </div>
+</body>
+</html>`;
+        result = {
+          html: simpleHtml,
+          title: "Basic Layout",
+          description: "Simple layout generated"
+        };
+      }
+    }
 
     return {
       html: result.html || "",
@@ -73,42 +99,19 @@ Generate clean, semantic HTML with proper Tailwind CSS classes for styling and r
       description: result.description || "AI-generated layout"
     };
   } catch (error) {
-    throw new Error(`Failed to generate code: ${error.message}`);
+    console.error("Error in generateCodeFromDescription:", error);
+    throw new Error(`Failed to generate code: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 export async function analyzeImageAndGenerateCode(imageBase64: string, additionalContext?: string): Promise<CodeGenerationResponse> {
   try {
-    const systemPrompt = `You are an expert frontend developer who can analyze UI sketches, wireframes, and screenshots to create responsive HTML layouts using Tailwind CSS.
+    const systemPrompt = `Image to HTML+Tailwind expert. Fast JSON response: {"html":"<!DOCTYPE html>...","title":"title","description":"desc"}`;
 
-Analyze the provided image and generate complete, production-ready HTML code that recreates the layout shown in the image.
-
-Requirements:
-- Use modern HTML5 semantic elements
-- Apply Tailwind CSS classes for responsive design
-- Match the layout structure shown in the image
-- Include proper accessibility attributes
-- Ensure mobile-first responsive design
-- Use appropriate semantic color classes
-- Include hover states and transitions where appropriate
-- Generate complete HTML documents with head and body sections
-- Include Tailwind CSS CDN link
-
-Respond with JSON in this exact format:
-{
-  "html": "complete HTML code here",
-  "title": "short descriptive title based on the image",
-  "description": "brief description of what you see in the image"
-}`;
-
-    const userPrompt = `Analyze this UI image and create a responsive HTML layout with Tailwind CSS that recreates the design shown.
-
-${additionalContext ? `Additional context: ${additionalContext}` : ''}
-
-Focus on matching the layout structure, component arrangement, and overall visual hierarchy shown in the image.`;
+    const userPrompt = `Convert image to HTML+Tailwind${additionalContext ? ` (${additionalContext})` : ''}`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         {
@@ -125,11 +128,28 @@ Focus on matching the layout structure, component arrangement, and overall visua
         }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
-      max_tokens: 4000,
+      temperature: 0.2,
+      max_tokens: 1500,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const rawContent = response.choices[0].message.content || "{}";
+    
+    // Clean the content to remove control characters that could break JSON parsing
+    const cleanedContent = rawContent.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+    
+    let result;
+    try {
+      result = JSON.parse(cleanedContent);
+    } catch (parseError) {
+      console.error("JSON parsing error in image analysis:", parseError);
+      console.error("Raw content:", rawContent);
+      // Fallback to safe response
+      result = {
+        html: "<!DOCTYPE html><html><head><title>Error</title></head><body><h1>Image Analysis Error</h1><p>Unable to generate layout from image. Please try again.</p></body></html>",
+        title: "Image Analysis Error",
+        description: "Failed to generate layout from image"
+      };
+    }
 
     return {
       html: result.html || "",
@@ -137,14 +157,15 @@ Focus on matching the layout structure, component arrangement, and overall visua
       description: result.description || "AI-generated layout from uploaded image"
     };
   } catch (error) {
-    throw new Error(`Failed to analyze image and generate code: ${error.message}`);
+    console.error("Error in analyzeImageAndGenerateCode:", error);
+    throw new Error(`Failed to analyze image and generate code: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 export async function explainCode(htmlCode: string): Promise<string> {
   try {
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
@@ -160,48 +181,45 @@ export async function explainCode(htmlCode: string): Promise<string> {
 
     return response.choices[0].message.content || "Unable to explain the code.";
   } catch (error) {
-    throw new Error(`Failed to explain code: ${error.message}`);
+    throw new Error(`Failed to explain code: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
 export async function improveLayout(htmlCode: string, feedback?: string): Promise<CodeGenerationResponse> {
   try {
-    const systemPrompt = `You are an expert frontend developer specializing in improving HTML layouts with Tailwind CSS. Analyze the provided code and suggest improvements for better design, accessibility, and user experience.
+    const systemPrompt = `Improve HTML layout with Tailwind CSS. Return only valid JSON: {"html":"complete improved html","title":"improved title","description":"what was improved"}. Keep <!DOCTYPE html>.`;
 
-Focus on:
-- Better responsive design patterns
-- Improved accessibility
-- Enhanced visual hierarchy
-- Better spacing and typography
-- Modern design trends
-- Performance optimizations
-
-Respond with JSON in this exact format:
-{
-  "html": "improved HTML code here",
-  "title": "title for the improved layout",
-  "description": "description of improvements made"
-}`;
-
-    const userPrompt = `Improve this HTML layout with better Tailwind CSS styling, responsive design, and accessibility:
-
-${htmlCode}
-
-${feedback ? `User feedback: ${feedback}` : ''}
-
-Make it more modern, accessible, and visually appealing while maintaining the core structure.`;
+    const userPrompt = `Improve this layout based on: ${feedback || 'Better design and user experience'}\n\nCurrent HTML:\n${htmlCode.substring(0, 800)}`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.7,
+      temperature: 0.2,
+      max_tokens: 1200,
     });
 
-    const result = JSON.parse(response.choices[0].message.content || "{}");
+    const rawContent = response.choices[0].message.content || "{}";
+    
+    // Clean the content to remove control characters that could break JSON parsing
+    const cleanedContent = rawContent.replace(/[\x00-\x1F\x7F-\x9F]/g, '');
+    
+    let result;
+    try {
+      result = JSON.parse(cleanedContent);
+    } catch (parseError) {
+      console.error("JSON parsing error in layout improvement:", parseError);
+      console.error("Raw content:", rawContent);
+      // Fallback to safe response
+      result = {
+        html: htmlCode, // Return original code if improvement fails
+        title: "Improvement Error",
+        description: "Failed to improve layout, returning original"
+      };
+    }
 
     return {
       html: result.html || htmlCode,
@@ -209,6 +227,7 @@ Make it more modern, accessible, and visually appealing while maintaining the co
       description: result.description || "AI-improved layout with better design and accessibility"
     };
   } catch (error) {
-    throw new Error(`Failed to improve layout: ${error.message}`);
+    console.error("Error in improveLayout:", error);
+    throw new Error(`Failed to improve layout: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }

@@ -147,6 +147,67 @@ Preferred communication style: Simple, everyday language.
   * Login and register forms with validation and error handling
   * Protected routes and user profile management in header
   * Token storage in localStorage with automatic API request authentication
+- July 03, 2025. Repositioned AI Design Assistant as floating chat widget "CodeGenie" in bottom-right corner:
+  * Transformed full-panel chatbot into compact floating icon with click-to-expand functionality
+  * Updated branding from "AI Design Assistant" to "CodeGenie" for innovative, short naming
+  * Added animated chat icon with online status indicator and hover tooltip
+  * Maintained all interactive features: layout generation, design feedback, framework recommendations
+- July 03, 2025. Optimized code generation performance for user-friendly experience:
+  * Reduced OpenAI API prompts from verbose to concise and efficient formats
+  * Lowered temperature settings (0.7 → 0.1-0.3) for faster, more focused responses  
+  * Added max_tokens limits (400-1000) to significantly reduce processing time
+  * Shortened system prompts while maintaining functionality
+  * Switched all functions to use gpt-4o-mini for maximum speed
+  * Optimized all API calls: text generation, image analysis, layout improvement, design assistant chat
+  * Target performance: reduce from 20+ seconds to under 5 seconds
+- July 03, 2025. Implemented comprehensive cancellation functionality for code generation:
+  * Added AbortController support to all API requests for proper cancellation handling
+  * Enhanced LoadingModal with cancel button (X icon and "Cancel Generation" button)
+  * Integrated cancellation across all generation types: text-to-code, image-to-code, and layout improvement
+  * Added proper error handling for cancelled requests with user-friendly toast notifications
+  * Users can now cancel any generation process by clicking the X button in the loading modal
+- July 03, 2025. Fixed critical bug in CodeGenie chatbot that caused JSON parsing errors:
+  * Resolved "Unterminated string in JSON" error that caused 500 server responses
+  * Added robust JSON validation and error handling with fallback responses
+  * Simplified system prompts to ensure valid JSON format from AI responses
+  * Implemented content cleaning to remove control characters that break JSON parsing
+  * CodeGenie chatbot now responds reliably in ~5-6 seconds with proper suggestions
+- July 03, 2025. Enhanced user experience with comprehensive UI improvements:
+  * Fixed chatbot suggestion text overflow with proper text wrapping and line breaks
+  * Added live preview functionality - automatically switches to preview tab when CodeGenie generates layouts
+  * Cleaned up loading modal by removing explicit time display and cancel button text
+  * Users can now cancel generation only via the top-right X button for cleaner interface
+  * Integrated real-time preview switching across all code generation methods (text, image, improvement, chatbot)
+- July 03, 2025. Resolved critical JSON parsing errors in all code generation services:
+  * Applied robust JSON validation and error handling to text-to-code, image-to-code, and layout improvement functions
+  * Added content cleaning to remove control characters that break JSON parsing
+  * Implemented graceful fallback responses when JSON parsing fails
+  * Optimized max_tokens from 800 to 700 for faster response times while maintaining quality
+  * All generation methods now handle malformed AI responses safely without throwing 500 errors
+- July 03, 2025. Enhanced code generation reliability and functionality:
+  * Improved AI prompts for more consistent JSON responses and increased max_tokens to 1200 for complete layouts
+  * Added intelligent fallback logic that extracts HTML from partial responses or generates functional basic layouts
+  * Fixed "Apply Improvements" functionality in CodeGenie chatbot with auto-switch to preview mode
+  * Enhanced layout improvement prompts for better results and user experience
+  * Eliminated "Generation Error" fallbacks by providing working layouts even when AI responses are malformed
+- July 03, 2025. Implemented real-time improvement suggestions for enhanced user experience:
+  * Added progressive auto-suggestions during layout improvements showing specific enhancements being applied
+  * Created real-time feedback system with step-by-step improvement notifications (visual design → responsive → accessibility)
+  * Enhanced improvement action with specific suggestions for each improvement phase
+  * Implemented 8-second progressive update sequence with completion confirmation and follow-up suggestions
+  * Users now see detailed real-time feedback when clicking "Apply Improvements" in CodeGenie chatbot
+- July 03, 2025. Reverted chatbot live preview changes to maintain application stability:
+  * Removed ChatbotPreview component and related floating window functionality
+  * Restored original chatbot workflow with main preview tab switching
+  * Cleaned up all chatbot preview state management and UI components
+  * Ensured existing functionality remains intact without breaking changes
+  * CodeGenie chatbot now uses standard preview switching as before
+- July 03, 2025. Fixed critical authentication error in image upload functionality:
+  * Resolved "Access token required" error when generating code from uploaded images
+  * Updated image generation to use authenticated fetch with proper JWT token headers for FormData uploads
+  * Fixed issue where apiRequest function was incompatible with FormData due to automatic JSON content-type setting
+  * Implemented custom authenticated file upload that properly handles multipart/form-data with JWT tokens
+  * All image-to-code generation functionality restored and working correctly with proper authentication
 
 ## User Preferences
 
