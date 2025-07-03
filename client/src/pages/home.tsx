@@ -25,21 +25,26 @@ export default function Home() {
   const [currentCode, setCurrentCode] = useState("");
   const [currentTitle, setCurrentTitle] = useState("");
   const [isReady, setIsReady] = useState(false);
+  const [abortController, setAbortController] = useState<AbortController | null>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const generateFromTextMutation = useMutation({
     mutationFn: async ({ description, additionalContext }: { description: string; additionalContext?: string }) => {
+      const controller = new AbortController();
+      setAbortController(controller);
+      
       const response = await apiRequest("POST", "/api/generate-from-text", {
         description,
         additionalContext,
-      });
+      }, controller.signal);
       return response.json();
     },
     onSuccess: (data: GenerationResult) => {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
       setIsReady(true);
+      setAbortController(null);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({
         title: "Code generated successfully!",
@@ -47,6 +52,14 @@ export default function Home() {
       });
     },
     onError: (error) => {
+      setAbortController(null);
+      if (error.name === 'AbortError') {
+        toast({
+          title: "Generation cancelled",
+          description: "Code generation was cancelled by user.",
+        });
+        return;
+      }
       toast({
         variant: "destructive",
         title: "Generation failed",
@@ -57,6 +70,9 @@ export default function Home() {
 
   const generateFromImageMutation = useMutation({
     mutationFn: async ({ file, additionalContext }: { file: File; additionalContext?: string }) => {
+      const controller = new AbortController();
+      setAbortController(controller);
+      
       const formData = new FormData();
       formData.append("image", file);
       if (additionalContext) {
@@ -67,6 +83,7 @@ export default function Home() {
         method: "POST",
         body: formData,
         credentials: "include",
+        signal: controller.signal,
       });
 
       if (!response.ok) {
@@ -80,6 +97,7 @@ export default function Home() {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
       setIsReady(true);
+      setAbortController(null);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({
         title: "Code generated from image!",
@@ -87,6 +105,14 @@ export default function Home() {
       });
     },
     onError: (error) => {
+      setAbortController(null);
+      if (error.name === 'AbortError') {
+        toast({
+          title: "Generation cancelled",
+          description: "Image generation was cancelled by user.",
+        });
+        return;
+      }
       toast({
         variant: "destructive",
         title: "Image analysis failed",
@@ -97,16 +123,20 @@ export default function Home() {
 
   const improveMutation = useMutation({
     mutationFn: async (feedback: string) => {
+      const controller = new AbortController();
+      setAbortController(controller);
+      
       const response = await apiRequest("POST", "/api/improve-layout", {
         code: currentCode,
         feedback,
-      });
+      }, controller.signal);
       return response.json();
     },
     onSuccess: (data: GenerationResult) => {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
       setIsReady(true);
+      setAbortController(null);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({
         title: "Layout improved!",
@@ -114,6 +144,14 @@ export default function Home() {
       });
     },
     onError: (error) => {
+      setAbortController(null);
+      if (error.name === 'AbortError') {
+        toast({
+          title: "Improvement cancelled",
+          description: "Layout improvement was cancelled by user.",
+        });
+        return;
+      }
       toast({
         variant: "destructive",
         title: "Improvement failed",
@@ -169,6 +207,13 @@ export default function Home() {
     if (currentCode) {
       // Use the improve layout API
       improveMutation.mutate(feedback);
+    }
+  };
+
+  const handleCancelGeneration = () => {
+    if (abortController) {
+      abortController.abort();
+      setAbortController(null);
     }
   };
 
@@ -245,7 +290,7 @@ export default function Home() {
 
       <Footer />
       
-      <LoadingModal open={isLoading} />
+      <LoadingModal open={isLoading} onCancel={handleCancelGeneration} />
       
       {/* AI Design Assistant Chatbot */}
       <DesignAssistant 

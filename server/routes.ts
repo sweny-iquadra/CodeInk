@@ -182,7 +182,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "isPublic must be a boolean" });
       }
 
-      const layout = await storage.updateLayoutVisibility(id, isPublic);
+      const layout = await storage.updateLayoutVisibility(id, isPublic, req.user!.userId);
 
       if (!layout) {
         return res.status(404).json({ message: "Layout not found" });
@@ -191,7 +191,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(layout);
     } catch (error) {
       console.error("Error updating layout visibility:", error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -208,7 +208,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(layout);
     } catch (error) {
       console.error("Error fetching layout:", error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -225,7 +225,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ explanation });
     } catch (error) {
       console.error("Error explaining code:", error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 
@@ -252,7 +252,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ ...result, id: layout.id });
     } catch (error) {
       console.error("Error improving layout:", error);
-      res.status(500).json({ message: error.message });
+      res.status(500).json({ message: error instanceof Error ? error.message : 'Unknown error' });
     }
   });
 

@@ -30,32 +30,26 @@ export interface CodeGenerationResponse {
 
 export async function generateCodeFromDescription(request: CodeGenerationRequest): Promise<CodeGenerationResponse> {
   try {
-    const systemPrompt = `You are an expert frontend developer. Create responsive HTML layouts with Tailwind CSS quickly and efficiently.
+    const systemPrompt = `Expert frontend developer. Create HTML with Tailwind CSS.
 
-Generate HTML with:
-- Modern semantic elements
-- Tailwind CSS classes for responsive design
-- Clean, minimal structure
-- Complete HTML document with Tailwind CDN
+Generate:
+- Semantic HTML
+- Tailwind CSS responsive
+- Complete document with CDN
 
-JSON format:
-{
-  "html": "HTML code",
-  "title": "layout title",
-  "description": "brief description"
-}`;
+JSON: {"html":"code","title":"title","description":"desc"}`;
 
-    const userPrompt = `Create: ${request.description}${request.additionalContext ? ` (${request.additionalContext})` : ''}`;
+    const userPrompt = `Create: ${request.description}`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini", // Faster model
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.5,
-      max_tokens: 3000,
+      temperature: 0.2,
+      max_tokens: 1500,
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
@@ -66,7 +60,7 @@ JSON format:
       description: result.description || "AI-generated layout"
     };
   } catch (error) {
-    throw new Error(`Failed to generate code: ${error.message}`);
+    throw new Error(`Failed to generate code: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -118,7 +112,7 @@ JSON format:
       description: result.description || "AI-generated layout from uploaded image"
     };
   } catch (error) {
-    throw new Error(`Failed to analyze image and generate code: ${error.message}`);
+    throw new Error(`Failed to analyze image and generate code: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -141,7 +135,7 @@ export async function explainCode(htmlCode: string): Promise<string> {
 
     return response.choices[0].message.content || "Unable to explain the code.";
   } catch (error) {
-    throw new Error(`Failed to explain code: ${error.message}`);
+    throw new Error(`Failed to explain code: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -165,14 +159,14 @@ JSON format:
     const userPrompt = `Improve layout: ${feedback || 'Better design, responsiveness, accessibility'}\n\n${htmlCode.substring(0, 1500)}`;
 
     const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+      model: "gpt-4o-mini",
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userPrompt }
       ],
       response_format: { type: "json_object" },
-      temperature: 0.5,
-      max_tokens: 3000,
+      temperature: 0.2,
+      max_tokens: 1500,
     });
 
     const result = JSON.parse(response.choices[0].message.content || "{}");
@@ -183,6 +177,6 @@ JSON format:
       description: result.description || "AI-improved layout with better design and accessibility"
     };
   } catch (error) {
-    throw new Error(`Failed to improve layout: ${error.message}`);
+    throw new Error(`Failed to improve layout: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
