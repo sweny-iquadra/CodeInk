@@ -31,13 +31,14 @@ export default function Home() {
   const queryClient = useQueryClient();
 
   const generateFromTextMutation = useMutation({
-    mutationFn: async ({ description, additionalContext }: { description: string; additionalContext?: string }) => {
+    mutationFn: async ({ description, additionalContext, isPublic }: { description: string; additionalContext?: string; isPublic?: boolean }) => {
       const controller = new AbortController();
       setAbortController(controller);
       
       const response = await apiRequest("POST", "/api/generate-from-text", {
         description,
         additionalContext,
+        isPublic,
       }, controller.signal);
       return response.json();
     },
@@ -71,7 +72,7 @@ export default function Home() {
   });
 
   const generateFromImageMutation = useMutation({
-    mutationFn: async ({ file, additionalContext }: { file: File; additionalContext?: string }) => {
+    mutationFn: async ({ file, additionalContext, isPublic }: { file: File; additionalContext?: string; isPublic?: boolean }) => {
       const controller = new AbortController();
       setAbortController(controller);
       
@@ -79,6 +80,9 @@ export default function Home() {
       formData.append("image", file);
       if (additionalContext) {
         formData.append("additionalContext", additionalContext);
+      }
+      if (isPublic !== undefined) {
+        formData.append("isPublic", String(isPublic));
       }
 
       // Use authenticated fetch with JWT token for file uploads
@@ -176,17 +180,20 @@ export default function Home() {
     type: 'text' | 'image'; 
     description?: string; 
     additionalContext?: string; 
-    file?: File 
+    file?: File;
+    isPublic?: boolean;
   }) => {
     if (data.type === 'text' && data.description) {
       generateFromTextMutation.mutate({
         description: data.description,
         additionalContext: data.additionalContext,
+        isPublic: data.isPublic ?? false,
       });
     } else if (data.type === 'image' && data.file) {
       generateFromImageMutation.mutate({
         file: data.file,
         additionalContext: data.additionalContext,
+        isPublic: data.isPublic ?? false,
       });
     }
   };
@@ -208,10 +215,11 @@ export default function Home() {
     queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
   };
 
-  const handleAssistantCodeGenerate = (description: string, additionalContext?: string) => {
+  const handleAssistantCodeGenerate = (description: string, additionalContext?: string, isPublic?: boolean) => {
     generateFromTextMutation.mutate({
       description,
       additionalContext,
+      isPublic: isPublic ?? false,
     });
   };
 
