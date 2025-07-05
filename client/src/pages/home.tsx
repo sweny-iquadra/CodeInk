@@ -9,9 +9,10 @@ import { HistoryPanel } from "@/components/history-panel";
 import { Gallery } from "@/components/gallery";
 import { LoadingModal } from "@/components/loading-modal";
 import { DesignAssistant } from "@/components/design-assistant";
+import { ProjectManagement } from "@/components/project-management";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Home as HomeIcon, Image } from "lucide-react";
+import { Home as HomeIcon, Image, Folder } from "lucide-react";
 import type { GeneratedLayout } from "@shared/schema";
 
 interface GenerationResult {
@@ -258,7 +259,7 @@ export default function Home() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Tabs defaultValue="create" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="create" className="flex items-center space-x-2">
               <HomeIcon className="w-4 h-4" />
               <span>Create</span>
@@ -266,6 +267,10 @@ export default function Home() {
             <TabsTrigger value="gallery" className="flex items-center space-x-2">
               <Image className="w-4 h-4" />
               <span>Gallery</span>
+            </TabsTrigger>
+            <TabsTrigger value="manage" className="flex items-center space-x-2">
+              <Folder className="w-4 h-4" />
+              <span>Manage</span>
             </TabsTrigger>
           </TabsList>
           
@@ -293,6 +298,42 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               <div className="lg:col-span-4">
                 <Gallery onSelectLayout={handleSelectLayout} />
+              </div>
+              
+              <div className="lg:col-span-8">
+                <OutputPanel 
+                  generatedCode={currentCode}
+                  title={currentTitle}
+                  isReady={isReady}
+                  onLayoutImproved={handleLayoutImproved}
+                  activeTab={outputTab}
+                  onTabChange={setOutputTab}
+                />
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="manage">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-4">
+                <ProjectManagement 
+                  onSelectLayout={handleSelectLayout}
+                  currentLayout={isReady ? {
+                    id: 0,
+                    title: currentTitle,
+                    description: "",
+                    inputMethod: "text",
+                    generatedCode: currentCode,
+                    additionalContext: null,
+                    userId: null,
+                    isPublic: false,
+                    categoryId: null,
+                    parentLayoutId: null,
+                    versionNumber: "1.0",
+                    changesDescription: null,
+                    createdAt: new Date()
+                  } : undefined}
+                />
               </div>
               
               <div className="lg:col-span-8">
