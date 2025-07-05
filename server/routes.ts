@@ -556,7 +556,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/layouts/shared", authenticateToken, async (req, res) => {
     try {
-      const sharedLayouts = await storage.getSharedLayouts(req.user!.userId);
+      if (!req.user?.userId || isNaN(req.user.userId)) {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const sharedLayouts = await storage.getSharedLayouts(req.user.userId);
       res.json(sharedLayouts);
     } catch (error: unknown) {
       console.error("Error fetching shared layouts:", error);

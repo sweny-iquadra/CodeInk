@@ -105,19 +105,19 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
   const { data: currentLayoutTags = [] } = useQuery({
     queryKey: ["/api/layouts", currentLayout?.id, "tags"],
     queryFn: () => apiRequest(`/api/layouts/${currentLayout?.id}/tags`),
-    enabled: !!currentLayout?.id
+    enabled: !!(currentLayout?.id && currentLayout.id > 0)
   });
 
   const { data: currentLayoutComments = [] } = useQuery({
     queryKey: ["/api/layouts", currentLayout?.id, "comments"],
     queryFn: () => apiRequest(`/api/layouts/${currentLayout?.id}/comments`),
-    enabled: !!currentLayout?.id
+    enabled: !!(currentLayout?.id && currentLayout.id > 0)
   });
 
   const { data: layoutVersions = [] } = useQuery({
     queryKey: ["/api/layouts", currentLayout?.id, "versions"],
     queryFn: () => apiRequest(`/api/layouts/${currentLayout?.id}/versions`),
-    enabled: !!currentLayout?.id
+    enabled: !!(currentLayout?.id && currentLayout.id > 0)
   });
 
   // Mutations
@@ -512,12 +512,12 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
             </div>
 
             <div className="flex gap-2">
-              <Select value={selectedCategory?.toString() || ""} onValueChange={(value) => setSelectedCategory(value ? parseInt(value) : null)}>
+              <Select value={selectedCategory?.toString() || "all"} onValueChange={(value) => setSelectedCategory(value === "all" ? null : parseInt(value))}>
                 <SelectTrigger className="w-48">
                   <SelectValue placeholder="Filter by category" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All categories</SelectItem>
+                  <SelectItem value="all">All categories</SelectItem>
                   {categories.map((category: Category) => (
                     <SelectItem key={category.id} value={category.id.toString()}>
                       {category.name}
