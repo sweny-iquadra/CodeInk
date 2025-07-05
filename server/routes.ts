@@ -556,7 +556,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/layouts/shared", authenticateToken, async (req, res) => {
     try {
+      console.log("Debug - req.user:", req.user);
+      console.log("Debug - req.user.userId:", req.user?.userId);
+      console.log("Debug - typeof req.user.userId:", typeof req.user?.userId);
+      
       if (!req.user?.userId || isNaN(req.user.userId)) {
+        console.log("Debug - Invalid user ID detected");
         return res.status(400).json({ message: "Invalid user ID" });
       }
       
@@ -616,6 +621,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Search and filtering routes
   app.get("/api/layouts/search", authenticateToken, async (req, res) => {
     try {
+      console.log("Search Debug - req.user:", req.user);
+      console.log("Search Debug - req.user.userId:", req.user?.userId);
+      console.log("Search Debug - typeof req.user.userId:", typeof req.user?.userId);
+      
       const { q: query, categoryId, tagIds, isPublic, dateFrom, dateTo } = req.query;
       
       const filters: any = {};
@@ -625,7 +634,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       if (dateFrom) filters.dateFrom = new Date(dateFrom as string);
       if (dateTo) filters.dateTo = new Date(dateTo as string);
       
-      const layouts = await storage.searchLayouts(req.user!.userId, query as string || '', filters);
+      if (!req.user?.userId || isNaN(req.user.userId)) {
+        console.log("Search Debug - Invalid user ID detected");
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const layouts = await storage.searchLayouts(req.user.userId, query as string || '', filters);
       res.json(layouts);
     } catch (error: unknown) {
       console.error("Error searching layouts:", error);

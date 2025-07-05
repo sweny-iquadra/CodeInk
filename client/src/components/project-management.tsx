@@ -97,26 +97,26 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
       if (selectedCategory) params.append("categoryId", selectedCategory.toString());
       if (selectedTags.length > 0) params.append("tagIds", selectedTags.join(","));
       
-      return apiRequest(`/api/layouts/search?${params.toString()}`);
+      return apiRequest("GET", `/api/layouts/search?${params.toString()}`);
     },
     enabled: !!(searchQuery || selectedCategory || selectedTags.length > 0)
   });
 
   const { data: currentLayoutTags = [] } = useQuery({
     queryKey: ["/api/layouts", currentLayout?.id, "tags"],
-    queryFn: () => apiRequest(`/api/layouts/${currentLayout?.id}/tags`),
+    queryFn: () => apiRequest("GET", `/api/layouts/${currentLayout?.id}/tags`),
     enabled: !!(currentLayout?.id && currentLayout.id > 0)
   });
 
   const { data: currentLayoutComments = [] } = useQuery({
     queryKey: ["/api/layouts", currentLayout?.id, "comments"],
-    queryFn: () => apiRequest(`/api/layouts/${currentLayout?.id}/comments`),
+    queryFn: () => apiRequest("GET", `/api/layouts/${currentLayout?.id}/comments`),
     enabled: !!(currentLayout?.id && currentLayout.id > 0)
   });
 
   const { data: layoutVersions = [] } = useQuery({
     queryKey: ["/api/layouts", currentLayout?.id, "versions"],
-    queryFn: () => apiRequest(`/api/layouts/${currentLayout?.id}/versions`),
+    queryFn: () => apiRequest("GET", `/api/layouts/${currentLayout?.id}/versions`),
     enabled: !!(currentLayout?.id && currentLayout.id > 0)
   });
 
