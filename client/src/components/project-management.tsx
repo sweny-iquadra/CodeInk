@@ -68,6 +68,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
   });
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
   const [viewingCategoryId, setViewingCategoryId] = useState<number | null>(null);
+  const [addTagDialog, setAddTagDialog] = useState(false);
 
   // Form states
   const [categoryForm, setCategoryForm] = useState<CreateCategoryRequest>({
@@ -127,8 +128,9 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
 
   // Query for current layout tags
   const { data: currentLayoutTags = [] } = useQuery<TagType[]>({
-    queryKey: [`/api/layouts/${currentLayout?.id}/tags`],
-    enabled: !!currentLayout?.id
+    queryKey: ["/api/layouts", currentLayout?.id, "tags"],
+    queryFn: () => apiRequest("GET", `/api/layouts/${currentLayout?.id}/tags`),
+    enabled: !!(currentLayout?.id && currentLayout.id > 0)
   });
 
   const { data: searchResults = [] } = useQuery({
@@ -220,7 +222,8 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     mutationFn: ({ layoutId, tagId }: { layoutId: number, tagId: number }) =>
       apiRequest("POST", `/api/layouts/${layoutId}/tags/${tagId}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/layouts/${currentLayout?.id}/tags`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/layouts", currentLayout?.id, "tags"] });
+      setAddTagDialog(false);
       toast({ title: "Tag added successfully" });
     },
     onError: () => {
@@ -232,7 +235,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     mutationFn: ({ layoutId, tagId }: { layoutId: number, tagId: number }) =>
       apiRequest("DELETE", `/api/layouts/${layoutId}/tags/${tagId}`),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/layouts/${currentLayout?.id}/tags`] });
+      queryClient.invalidateQueries({ queryKey: ["/api/layouts", currentLayout?.id, "tags"] });
       toast({ title: "Tag removed successfully" });
     },
     onError: () => {
@@ -410,15 +413,17 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                           <p className="text-xs text-muted-foreground truncate">
                             {layout.description}
                           </p>
-                          <div className="flex items-center gap-2 mt-1">
+                          <div className="flex items-center justify-between mt-1">
                             <p className="text-xs text-muted-foreground">
                               {new Date(layout.createdAt).toLocaleDateString()}
                             </p>
-                            <Tag className="w-3 h-3 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">
-                              {/* Will show tag count when layout tags are loaded */}
-                              Tags
-                            </span>
+                            <div className="flex items-center gap-1">
+                              <Tag className="w-3 h-3 text-muted-foreground" />
+                              <span className="text-xs text-muted-foreground">
+                                {/* Placeholder for tag count - will be updated with real count */}
+                                0 tags
+                              </span>
+                            </div>
                           </div>
                         </div>
                         <ChevronRight className="w-4 h-4 text-muted-foreground" />
@@ -525,17 +530,20 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <Label className="text-xs">Tags</Label>
-                    <Dialog>
+                    <Dialog open={addTagDialog} onOpenChange={setAddTagDialog}>
                       <DialogTrigger asChild>
                         <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
                           <Plus className="h-3 w-3 mr-1" />
                           Add Tag
                         </Button>
                       </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
+                      <DialogContent className="sm:max-w-md" aria-describedby="add-tag-description">
                         <DialogHeader>
                           <DialogTitle className="text-sm">Add Tag to Layout</DialogTitle>
                         </DialogHeader>
+                        <p id="add-tag-description" className="text-sm text-muted-foreground">
+                          Select a tag to assign to this layout.
+                        </p>
                         <div className="space-y-4">
                           <Label className="text-xs">Available Tags</Label>
                           <div className="max-h-48 overflow-y-auto space-y-2">
