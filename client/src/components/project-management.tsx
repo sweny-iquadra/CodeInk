@@ -128,8 +128,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
 
   // Query for current layout tags - ensure it's always an array
   const { data: currentLayoutTags = [] } = useQuery<TagType[]>({
-    queryKey: ["/api/layouts", currentLayout?.id, "tags"],
-    queryFn: () => apiRequest("GET", `/api/layouts/${currentLayout?.id}/tags`),
+    queryKey: [`/api/layouts/${currentLayout?.id}/tags`],
     enabled: !!(currentLayout?.id && currentLayout.id > 0 && !isNaN(currentLayout.id))
   });
 
@@ -229,7 +228,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     onSuccess: (data) => {
       console.log("Tag added successfully:", data);
       // Invalidate both the specific layout tags and the general layouts query
-      queryClient.invalidateQueries({ queryKey: ["/api/layouts", currentLayout?.id, "tags"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/layouts/${currentLayout?.id}/tags`] });
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       setAddTagDialog(false);
       toast({ title: "Tag added successfully" });
@@ -248,7 +247,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     onSuccess: (data) => {
       console.log("Tag removed successfully:", data);
       // Invalidate both the specific layout tags and the general layouts query
-      queryClient.invalidateQueries({ queryKey: ["/api/layouts", currentLayout?.id, "tags"] });
+      queryClient.invalidateQueries({ queryKey: [`/api/layouts/${currentLayout?.id}/tags`] });
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({ title: "Tag removed successfully" });
     },
