@@ -596,68 +596,85 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div>
-                <Label className="text-xs">Category</Label>
-                <Select value={selectedCategory?.toString() || "all"} onValueChange={(value) => setSelectedCategory(value === "all" ? null : parseInt(value))}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All categories</SelectItem>
-                    {categories.map((category: Category) => (
-                      <SelectItem key={category.id} value={category.id.toString()}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-sm font-medium">Category</Label>
+                  <Select value={selectedCategory?.toString() || "all"} onValueChange={(value) => setSelectedCategory(value === "all" ? null : parseInt(value))}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="All categories" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All categories</SelectItem>
+                      {categories.map((category: Category) => (
+                        <SelectItem key={category.id} value={category.id.toString()}>
+                          <div className="flex items-center gap-2">
+                            <div 
+                              className="w-3 h-3 rounded-full" 
+                              style={{ backgroundColor: category.color }}
+                            />
+                            {category.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div>
-                <Label className="text-xs">Tags</Label>
-                <div className="space-y-2">
-                  <div className="max-h-32 overflow-y-auto border rounded p-2">
-                    {tags.map((tag: TagType) => (
-                      <div key={tag.id} className="flex items-center space-x-2 py-1">
-                        <Checkbox
-                          id={`tag-${tag.id}`}
-                          checked={selectedTags.includes(tag.id)}
-                          onCheckedChange={(checked) => {
-                            if (checked) {
-                              setSelectedTags([...selectedTags, tag.id]);
-                            } else {
-                              setSelectedTags(selectedTags.filter(id => id !== tag.id));
-                            }
-                          }}
-                        />
-                        <Label htmlFor={`tag-${tag.id}`} className="text-xs">
-                          <Badge style={{ backgroundColor: tag.color }} className="text-white">
-                            {tag.name}
-                          </Badge>
-                        </Label>
-                      </div>
-                    ))}
+                <div>
+                  <Label className="text-sm font-medium">Date Range</Label>
+                  <div className="flex gap-2 mt-1">
+                    <Input
+                      type="date"
+                      value={dateFrom}
+                      onChange={(e) => setDateFrom(e.target.value)}
+                      placeholder="From"
+                      className="flex-1"
+                    />
+                    <Input
+                      type="date"
+                      value={dateTo}
+                      onChange={(e) => setDateTo(e.target.value)}
+                      placeholder="To"
+                      className="flex-1"
+                    />
                   </div>
                 </div>
               </div>
 
               <div>
-                <Label className="text-xs">Date From</Label>
-                <Input
-                  type="date"
-                  value={dateFrom}
-                  onChange={(e) => setDateFrom(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <Label className="text-xs">Date To</Label>
-                <Input
-                  type="date"
-                  value={dateTo}
-                  onChange={(e) => setDateTo(e.target.value)}
-                />
+                <Label className="text-sm font-medium">Tags</Label>
+                <div className="mt-2 max-h-24 overflow-y-auto border rounded-md p-2 bg-muted/30">
+                  {tags.length > 0 ? (
+                    <div className="flex flex-wrap gap-2">
+                      {tags.map((tag: TagType) => (
+                        <div key={tag.id} className="flex items-center space-x-2">
+                          <Checkbox
+                            id={`tag-${tag.id}`}
+                            checked={selectedTags.includes(tag.id)}
+                            onCheckedChange={(checked) => {
+                              if (checked) {
+                                setSelectedTags([...selectedTags, tag.id]);
+                              } else {
+                                setSelectedTags(selectedTags.filter(id => id !== tag.id));
+                              }
+                            }}
+                          />
+                          <Label htmlFor={`tag-${tag.id}`} className="cursor-pointer">
+                            <Badge 
+                              style={{ backgroundColor: tag.color }} 
+                              className="text-white text-xs"
+                            >
+                              {tag.name}
+                            </Badge>
+                          </Label>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">No tags available. Create tags in the Organization tab.</p>
+                  )}
+                </div>
               </div>
             </div>
 
