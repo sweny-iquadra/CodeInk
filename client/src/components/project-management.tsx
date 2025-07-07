@@ -105,9 +105,9 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     queryKey: ["/api/layouts"]
   });
 
-  // Get base layouts for dropdown (layouts without parentLayoutId - these are the originals)
+  // Get base layouts for dropdown - exclude titles that start with "Improved:"
   const uniqueLayouts = layouts.filter((layout: GeneratedLayout) => 
-    !layout.parentLayoutId // Only show base layouts, not versions
+    !layout.parentLayoutId && !layout.title.startsWith("Improved:")
   );
 
   // Query for layouts by category
