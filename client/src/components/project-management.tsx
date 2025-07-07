@@ -62,11 +62,6 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [selectedLayout, setSelectedLayout] = useState<number | null>(null);
-  const [versionForm, setVersionForm] = useState({
-    versionNumber: "",
-    changesDescription: ""
-  });
-  const [versionDialogOpen, setVersionDialogOpen] = useState(false);
   const [viewingCategoryId, setViewingCategoryId] = useState<number | null>(null);
   const [addTagDialog, setAddTagDialog] = useState(false);
 
@@ -257,36 +252,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     }
   });
 
-  const createVersionMutation = useMutation({
-    mutationFn: (data: { parentId: number; versionNumber: string; changesDescription: string }) => 
-      apiRequest("POST", `/api/layouts/${data.parentId}/versions`, {
-        versionNumber: data.versionNumber,
-        changesDescription: data.changesDescription
-      }),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/layouts", selectedLayout, "versions"] });
-      setVersionForm({ versionNumber: "", changesDescription: "" });
-      setVersionDialogOpen(false);
-      toast({ title: "Version created successfully" });
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Error creating version",
-        description: error.message,
-        variant: "destructive"
-      });
-    }
-  });
 
-  const handleCreateVersion = () => {
-    if (selectedLayout && versionForm.versionNumber && versionForm.changesDescription) {
-      createVersionMutation.mutate({
-        parentId: selectedLayout,
-        versionNumber: versionForm.versionNumber,
-        changesDescription: versionForm.changesDescription
-      });
-    }
-  };
 
   return (
     <div className="h-full flex flex-col">
@@ -656,13 +622,13 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
         <TabsContent value="versions" className="p-4">
           <div className="space-y-4">
             <div>
-              <Label className="text-sm">Select Layout for Version Control</Label>
+              <Label className="text-sm">Choose Layout</Label>
               <Select 
                 value={selectedLayout?.toString() || ""} 
                 onValueChange={(value) => setSelectedLayout(value ? parseInt(value) : null)}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Choose a layout..." />
+                  <SelectValue placeholder="Choose layout..." />
                 </SelectTrigger>
                 <SelectContent>
                   {uniqueLayouts.map((layout: GeneratedLayout) => (
@@ -675,85 +641,48 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
             </div>
 
             {selectedLayout && (
-              <>
-                <Dialog open={versionDialogOpen} onOpenChange={setVersionDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="w-full">
-                      <GitBranch className="h-4 w-4 mr-2" />
-                      Create Version
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>Create New Version</DialogTitle>
-                      <DialogDescription>
-                        Create a new version of this layout to track changes and maintain version history.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="space-y-4">
-                      <div>
-                        <Label htmlFor="version-number">Version Number</Label>
-                        <Input
-                          id="version-number"
-                          value={versionForm.versionNumber}
-                          onChange={(e) => setVersionForm(prev => ({ ...prev, versionNumber: e.target.value }))}
-                          placeholder="e.g., v1.1, v2.0"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="changes-description">Changes Description</Label>
-                        <Textarea
-                          id="changes-description"
-                          value={versionForm.changesDescription}
-                          onChange={(e) => setVersionForm(prev => ({ ...prev, changesDescription: e.target.value }))}
-                          placeholder="Describe what changed in this version..."
-                        />
-                      </div>
-                      <Button 
-                        onClick={handleCreateVersion}
-                        disabled={!versionForm.versionNumber || !versionForm.changesDescription || createVersionMutation.isPending}
-                        className="w-full"
-                      >
-                        {createVersionMutation.isPending ? "Creating..." : "Create Version"}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-sm flex items-center gap-2">
-                      <History className="h-4 w-4" />
-                      Version History
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      {Array.isArray(versionHistory) && versionHistory.length > 0 ? (
-                        versionHistory.map((version: GeneratedLayout) => (
-                          <div
-                            key={version.id}
-                            className="flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-accent"
-                            onClick={() => onSelectLayout(version)}
-                          >
-                            <div>
-                              <div className="font-medium text-sm">{version.versionNumber || 'Original'}</div>
-                              <div className="text-xs text-muted-foreground">{version.changesDescription || version.description}</div>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <History className="h-4 w-4" />
+                    Version History
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {Array.isArray(versionHistory) && versionHistory.length > 0 ? (
+                      versionHistory.map((version: GeneratedLayout) => (
+                        <div
+                          key={version.id}
+                          className="flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-accent transition-colors"
+                          onClick={() => onSelectLayout(version)}
+                        >
+                          <div className="flex-1">
+                            <div className="font-medium text-sm flex items-center gap-2">
+                              <GitBranch className="h-3 w-3" />
+                              {version.versionNumber || 'Original'}
                             </div>
-                            <div className="text-xs text-muted-foreground">
-                              {new Date(version.createdAt).toLocaleDateString()}
+                            <div className="text-xs text-muted-foreground mt-1">
+                              {version.changesDescription || version.description}
+                            </div>
+                            <div className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {new Date(version.createdAt).toLocaleDateString()} at {new Date(version.createdAt).toLocaleTimeString()}
                             </div>
                           </div>
-                        ))
-                      ) : (
-                        <div className="text-sm text-muted-foreground text-center py-4">
-                          No versions created yet. Create your first version above.
+                          <Badge variant="outline" className="text-xs">
+                            {version.inputMethod}
+                          </Badge>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-muted-foreground text-center py-4">
+                        No versions available. Versions are automatically created when layouts are modified.
                         </div>
                       )}
                     </div>
                   </CardContent>
                 </Card>
-              </>
             )}
 
             {!selectedLayout && (

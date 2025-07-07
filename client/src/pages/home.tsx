@@ -20,11 +20,13 @@ interface GenerationResult {
   title: string;
   description: string;
   id: number;
+  versionNumber?: string;
 }
 
 export default function Home() {
   const [currentCode, setCurrentCode] = useState("");
   const [currentTitle, setCurrentTitle] = useState("");
+  const [currentLayoutId, setCurrentLayoutId] = useState<number | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [outputTab, setOutputTab] = useState("code");
@@ -48,6 +50,7 @@ export default function Home() {
     onSuccess: (data: GenerationResult) => {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
+      setCurrentLayoutId(data.id);
       setIsReady(true);
       setOutputTab("preview"); // Auto-switch to preview for live preview
       setAbortController(null);
@@ -114,6 +117,7 @@ export default function Home() {
     onSuccess: (data: GenerationResult) => {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
+      setCurrentLayoutId(data.id);
       setIsReady(true);
       setOutputTab("preview"); // Auto-switch to preview for live preview
       setAbortController(null);
@@ -148,19 +152,21 @@ export default function Home() {
       const response = await apiRequest("POST", "/api/improve-layout", {
         code: currentCode,
         feedback,
+        originalLayoutId: currentLayoutId,
       }, controller.signal);
       return response.json();
     },
     onSuccess: (data: GenerationResult) => {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
+      setCurrentLayoutId(data.id);
       setIsReady(true);
       setOutputTab("preview"); // Auto-switch to preview for live preview
       setAbortController(null);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({
         title: "Layout improved!",
-        description: "Your layout has been enhanced based on AI feedback.",
+        description: data.versionNumber ? `Version ${data.versionNumber} created with improvements.` : "Your layout has been enhanced based on AI feedback.",
       });
     },
     onError: (error) => {
@@ -208,7 +214,9 @@ export default function Home() {
   const handleSelectLayout = (layout: GeneratedLayout) => {
     setCurrentCode(layout.generatedCode);
     setCurrentTitle(layout.title);
+    setCurrentLayoutId(layout.id);
     setIsReady(true);
+    setOutputTab("preview"); // Auto-switch to preview when selecting layout
     toast({
       title: "Layout loaded",
       description: `Loaded "${layout.title}" from history.`,
