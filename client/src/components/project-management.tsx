@@ -105,9 +105,9 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     queryKey: ["/api/layouts"]
   });
 
-  // Get unique layouts for dropdown (remove duplicates by title, keep the latest one)
-  const uniqueLayouts = layouts.filter((layout: GeneratedLayout, index: number, self: GeneratedLayout[]) => 
-    index === self.findIndex(l => l.title === layout.title)
+  // Get base layouts for dropdown (layouts without parentLayoutId - these are the originals)
+  const uniqueLayouts = layouts.filter((layout: GeneratedLayout) => 
+    !layout.parentLayoutId // Only show base layouts, not versions
   );
 
   // Query for layouts by category

@@ -639,7 +639,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/layouts/shared", authenticateToken, async (req, res) => {
     try {
-      if (!req.user?.userId || typeof req.user.userId !== 'number') {
+      if (!req.user?.userId || typeof req.user.userId !== 'number' || isNaN(req.user.userId)) {
+        console.error("Invalid user ID for shared layouts:", req.user?.userId);
         return res.status(400).json({ message: "Invalid user ID" });
       }
       

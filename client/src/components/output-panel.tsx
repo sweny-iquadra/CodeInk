@@ -120,7 +120,12 @@ export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutI
 
   const improveMutation = useMutation({
     mutationFn: async ({ code, feedback }: { code: string; feedback?: string }) => {
-      const response = await apiRequest("POST", "/api/improve-layout", { code, feedback });
+      console.log("Improving layout with currentLayoutId:", currentLayoutId);
+      const response = await apiRequest("POST", "/api/improve-layout", { 
+        code, 
+        feedback,
+        originalLayoutId: currentLayoutId
+      });
       return response.json();
     },
     onSuccess: (data) => {
