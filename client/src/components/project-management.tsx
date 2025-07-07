@@ -116,8 +116,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
 
   // Query for layouts by category
   const { data: categoryLayouts = [] } = useQuery<GeneratedLayout[]>({
-    queryKey: ["/api/categories", viewingCategoryId, "layouts"],
-    queryFn: () => apiRequest("GET", `/api/categories/${viewingCategoryId}/layouts`),
+    queryKey: [`/api/categories/${viewingCategoryId}/layouts`],
     enabled: !!viewingCategoryId
   });
 
@@ -366,7 +365,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                       No layouts in this category yet
                     </div>
                   ) : (
-                    categoryLayouts.map((layout: GeneratedLayout) => (
+                    Array.isArray(categoryLayouts) && categoryLayouts.map((layout: GeneratedLayout) => (
                       <div
                         key={layout.id}
                         className="flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-accent"
