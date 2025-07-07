@@ -134,9 +134,9 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
   });
 
   const { data: layoutVersions = [] } = useQuery({
-    queryKey: ["/api/layouts", currentLayout?.id, "versions"],
-    queryFn: () => apiRequest("GET", `/api/layouts/${currentLayout?.id}/versions`),
-    enabled: !!(currentLayout?.id && currentLayout.id > 0)
+    queryKey: ["/api/layouts", selectedLayout, "versions"],
+    queryFn: () => apiRequest("GET", `/api/layouts/${selectedLayout}/versions`),
+    enabled: !!selectedLayout
   });
 
   // Mutations
@@ -501,9 +501,27 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      <div className="text-sm text-muted-foreground text-center py-4">
-                        No versions created yet. Create your first version above.
-                      </div>
+                      {layoutVersions.length > 0 ? (
+                        layoutVersions.map((version: GeneratedLayout) => (
+                          <div
+                            key={version.id}
+                            className="flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-accent"
+                            onClick={() => onSelectLayout(version)}
+                          >
+                            <div>
+                              <div className="font-medium text-sm">{version.versionNumber}</div>
+                              <div className="text-xs text-muted-foreground">{version.changesDescription}</div>
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {new Date(version.createdAt).toLocaleDateString()}
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="text-sm text-muted-foreground text-center py-4">
+                          No versions created yet. Create your first version above.
+                        </div>
+                      )}
                     </div>
                   </CardContent>
                 </Card>
