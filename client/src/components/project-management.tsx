@@ -125,6 +125,12 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     return layouts.filter((layout: GeneratedLayout) => layout.categoryId === categoryId).length;
   };
 
+  // Query for current layout tags
+  const { data: currentLayoutTags = [] } = useQuery<TagType[]>({
+    queryKey: [`/api/layouts/${currentLayout?.id}/tags`],
+    enabled: !!currentLayout?.id
+  });
+
   const { data: searchResults = [] } = useQuery({
     queryKey: ["/api/layouts/search", searchQuery, selectedCategory, selectedTags, dateFrom, dateTo],
     queryFn: () => {
@@ -140,11 +146,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     enabled: !!(searchQuery || selectedCategory || selectedTags.length > 0)
   });
 
-  const { data: currentLayoutTags = [] } = useQuery({
-    queryKey: ["/api/layouts", currentLayout?.id, "tags"],
-    queryFn: () => apiRequest("GET", `/api/layouts/${currentLayout?.id}/tags`),
-    enabled: !!(currentLayout?.id && currentLayout.id > 0)
-  });
+
 
   const { data: currentLayoutComments = [] } = useQuery({
     queryKey: ["/api/layouts", currentLayout?.id, "comments"],
@@ -210,6 +212,31 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     },
     onError: (error: any) => {
       toast({ title: "Error creating team", description: error.message, variant: "destructive" });
+    }
+  });
+
+  // Tag assignment mutations
+  const addTagMutation = useMutation({
+    mutationFn: ({ layoutId, tagId }: { layoutId: number, tagId: number }) =>
+      apiRequest("POST", `/api/layouts/${layoutId}/tags/${tagId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/layouts/${currentLayout?.id}/tags`] });
+      toast({ title: "Tag added successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to add tag", variant: "destructive" });
+    }
+  });
+
+  const removeTagMutation = useMutation({
+    mutationFn: ({ layoutId, tagId }: { layoutId: number, tagId: number }) =>
+      apiRequest("DELETE", `/api/layouts/${layoutId}/tags/${tagId}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/layouts/${currentLayout?.id}/tags`] });
+      toast({ title: "Tag removed successfully" });
+    },
+    onError: () => {
+      toast({ title: "Failed to remove tag", variant: "destructive" });
     }
   });
 
@@ -383,9 +410,16 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                           <p className="text-xs text-muted-foreground truncate">
                             {layout.description}
                           </p>
-                          <p className="text-xs text-muted-foreground">
-                            {new Date(layout.createdAt).toLocaleDateString()}
-                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(layout.createdAt).toLocaleDateString()}
+                            </p>
+                            <Tag className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">
+                              {/* Will show tag count when layout tags are loaded */}
+                              Tags
+                            </span>
+                          </div>
                         </div>
                         <ChevronRight className="w-4 h-4 text-muted-foreground" />
                       </div>
@@ -489,13 +523,79 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                 
                 {/* Layout Tags */}
                 <div>
-                  <Label className="text-xs">Tags</Label>
-                  <div className="flex flex-wrap gap-1 mt-1">
-                    {currentLayoutTags.map((tag: TagType) => (
-                      <Badge key={tag.id} variant="secondary" className="text-xs">
-                        {tag.name}
-                      </Badge>
-                    ))}
+                  <div className="flex items-center justify-between mb-2">
+                    <Label className="text-xs">Tags</Label>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button size="sm" variant="outline" className="h-6 px-2 text-xs">
+                          <Plus className="h-3 w-3 mr-1" />
+                          Add Tag
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="sm:max-w-md">
+                        <DialogHeader>
+                          <DialogTitle className="text-sm">Add Tag to Layout</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <Label className="text-xs">Available Tags</Label>
+                          <div className="max-h-48 overflow-y-auto space-y-2">
+                            {tags.filter(tag => !currentLayoutTags.some(current => current.id === tag.id)).map((tag: TagType) => (
+                              <div
+                                key={tag.id}
+                                className="flex items-center justify-between p-2 border rounded cursor-pointer hover:bg-accent"
+                                onClick={() => {
+                                  if (currentLayout?.id) {
+                                    addTagMutation.mutate({ layoutId: currentLayout.id, tagId: tag.id });
+                                  }
+                                }}
+                              >
+                                <div className="flex items-center gap-2">
+                                  <div 
+                                    className="w-3 h-3 rounded-full" 
+                                    style={{ backgroundColor: tag.color }}
+                                  />
+                                  <span className="text-sm">{tag.name}</span>
+                                </div>
+                                <Plus className="h-4 w-4 text-muted-foreground" />
+                              </div>
+                            ))}
+                            {tags.filter(tag => !currentLayoutTags.some(current => current.id === tag.id)).length === 0 && (
+                              <p className="text-sm text-muted-foreground text-center py-4">
+                                All tags have been assigned to this layout
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {currentLayoutTags.length === 0 ? (
+                      <p className="text-xs text-muted-foreground">No tags assigned</p>
+                    ) : (
+                      currentLayoutTags.map((tag: TagType) => (
+                        <Badge
+                          key={tag.id}
+                          variant="secondary"
+                          className="text-xs flex items-center gap-1 pr-1"
+                          style={{ backgroundColor: tag.color + "20", color: tag.color }}
+                        >
+                          {tag.name}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-3 w-3 p-0 hover:bg-transparent"
+                            onClick={() => {
+                              if (currentLayout?.id) {
+                                removeTagMutation.mutate({ layoutId: currentLayout.id, tagId: tag.id });
+                              }
+                            }}
+                          >
+                            <X className="h-2 w-2" />
+                          </Button>
+                        </Badge>
+                      ))
+                    )}
                   </div>
                 </div>
 
