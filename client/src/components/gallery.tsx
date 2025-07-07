@@ -80,6 +80,17 @@ export function Gallery({ onSelectLayout }: GalleryProps) {
                         <Eye className="w-3 h-3 mr-1" />
                         Public
                       </Badge>
+                      {(layout as any).category && (
+                        <div className="flex items-center gap-1">
+                          <div 
+                            className="w-2 h-2 rounded-full" 
+                            style={{ backgroundColor: (layout as any).category.color }}
+                          />
+                          <span className="text-xs text-muted-foreground font-medium">
+                            {(layout as any).category.name}
+                          </span>
+                        </div>
+                      )}
                     </div>
                     {layout.description && (
                       <p className="text-xs text-muted-foreground line-clamp-2 mb-2">

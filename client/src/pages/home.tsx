@@ -9,9 +9,10 @@ import { HistoryPanel } from "@/components/history-panel";
 import { Gallery } from "@/components/gallery";
 import { LoadingModal } from "@/components/loading-modal";
 import { DesignAssistant } from "@/components/design-assistant";
+import { ProjectManagement } from "@/components/project-management";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
-import { Home as HomeIcon, Image } from "lucide-react";
+import { Home as HomeIcon, Image, Folder } from "lucide-react";
 import type { GeneratedLayout } from "@shared/schema";
 
 interface GenerationResult {
@@ -19,32 +20,39 @@ interface GenerationResult {
   title: string;
   description: string;
   id: number;
+  versionNumber?: string;
 }
 
 export default function Home() {
   const [currentCode, setCurrentCode] = useState("");
   const [currentTitle, setCurrentTitle] = useState("");
+  const [currentLayoutId, setCurrentLayoutId] = useState<number | null>(null);
   const [isReady, setIsReady] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [outputTab, setOutputTab] = useState("code");
+  const [selectedLayoutForManagement, setSelectedLayoutForManagement] = useState<GeneratedLayout | undefined>(undefined);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const generateFromTextMutation = useMutation({
-    mutationFn: async ({ description, additionalContext, isPublic }: { description: string; additionalContext?: string; isPublic?: boolean }) => {
+
+    mutationFn: async ({ description, additionalContext, isPublic, categoryId }: { description: string; additionalContext?: string; isPublic?: boolean; categoryId?: number }) => {
+
       const controller = new AbortController();
       setAbortController(controller);
       
       const response = await apiRequest("POST", "/api/generate-from-text", {
         description,
         additionalContext,
-        isPublic,
+        isPublic: isPublic || false,
+        categoryId,
       }, controller.signal);
       return response.json();
     },
     onSuccess: (data: GenerationResult) => {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
+      setCurrentLayoutId(data.id);
       setIsReady(true);
       setOutputTab("preview"); // Auto-switch to preview for live preview
       setAbortController(null);
@@ -72,7 +80,8 @@ export default function Home() {
   });
 
   const generateFromImageMutation = useMutation({
-    mutationFn: async ({ file, additionalContext, isPublic }: { file: File; additionalContext?: string; isPublic?: boolean }) => {
+
+    mutationFn: async ({ file, additionalContext, isPublic, categoryId }: { file: File; additionalContext?: string; isPublic?: boolean; categoryId?: number }) => {
       const controller = new AbortController();
       setAbortController(controller);
       
@@ -81,8 +90,11 @@ export default function Home() {
       if (additionalContext) {
         formData.append("additionalContext", additionalContext);
       }
-      if (isPublic !== undefined) {
-        formData.append("isPublic", String(isPublic));
+
+      formData.append("isPublic", String(isPublic || false));
+      if (categoryId) {
+        formData.append("categoryId", String(categoryId));
+
       }
 
       // Use authenticated fetch with JWT token for file uploads
@@ -110,6 +122,7 @@ export default function Home() {
     onSuccess: (data: GenerationResult) => {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
+      setCurrentLayoutId(data.id);
       setIsReady(true);
       setOutputTab("preview"); // Auto-switch to preview for live preview
       setAbortController(null);
@@ -141,22 +154,26 @@ export default function Home() {
       const controller = new AbortController();
       setAbortController(controller);
       
+      console.log("Improving layout with currentLayoutId:", currentLayoutId);
+      
       const response = await apiRequest("POST", "/api/improve-layout", {
         code: currentCode,
         feedback,
+        originalLayoutId: currentLayoutId,
       }, controller.signal);
       return response.json();
     },
     onSuccess: (data: GenerationResult) => {
       setCurrentCode(data.html);
       setCurrentTitle(data.title);
+      setCurrentLayoutId(data.id);
       setIsReady(true);
       setOutputTab("preview"); // Auto-switch to preview for live preview
       setAbortController(null);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({
         title: "Layout improved!",
-        description: "Your layout has been enhanced based on AI feedback.",
+        description: data.versionNumber ? `Version ${data.versionNumber} created with improvements.` : "Your layout has been enhanced based on AI feedback.",
       });
     },
     onError: (error) => {
@@ -182,29 +199,45 @@ export default function Home() {
     additionalContext?: string; 
     file?: File;
     isPublic?: boolean;
+    categoryId?: number;
+
   }) => {
     if (data.type === 'text' && data.description) {
       generateFromTextMutation.mutate({
         description: data.description,
         additionalContext: data.additionalContext,
-        isPublic: data.isPublic ?? false,
+        isPublic: data.isPublic,
+        categoryId: data.categoryId,
       });
     } else if (data.type === 'image' && data.file) {
       generateFromImageMutation.mutate({
         file: data.file,
         additionalContext: data.additionalContext,
-        isPublic: data.isPublic ?? false,
+        isPublic: data.isPublic,
+        categoryId: data.categoryId,
+
       });
     }
   };
 
   const handleSelectLayout = (layout: GeneratedLayout) => {
+    console.log("Selecting layout with ID:", layout.id);
     setCurrentCode(layout.generatedCode);
     setCurrentTitle(layout.title);
+    setCurrentLayoutId(layout.id);
     setIsReady(true);
+    setOutputTab("preview"); // Auto-switch to preview when selecting layout
     toast({
       title: "Layout loaded",
       description: `Loaded "${layout.title}" from history.`,
+    });
+  };
+
+  const handleSelectLayoutForManagement = (layout: GeneratedLayout) => {
+    setSelectedLayoutForManagement(layout);
+    toast({
+      title: "Layout selected",
+      description: `Selected "${layout.title}" for project management.`,
     });
   };
 
@@ -215,11 +248,12 @@ export default function Home() {
     queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
   };
 
-  const handleAssistantCodeGenerate = (description: string, additionalContext?: string, isPublic?: boolean) => {
+  const handleAssistantCodeGenerate = (description: string, additionalContext?: string, isPublic?: boolean, categoryId?: number) => {
     generateFromTextMutation.mutate({
       description,
       additionalContext,
-      isPublic: isPublic ?? false,
+      isPublic: isPublic ?? false, // Default to private if not specified
+      categoryId,
     });
   };
 
@@ -260,7 +294,7 @@ export default function Home() {
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Tabs defaultValue="create" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
+          <TabsList className="grid w-full grid-cols-3 mb-8">
             <TabsTrigger value="create" className="flex items-center space-x-2">
               <HomeIcon className="w-4 h-4" />
               <span>Create</span>
@@ -268,6 +302,10 @@ export default function Home() {
             <TabsTrigger value="gallery" className="flex items-center space-x-2">
               <Image className="w-4 h-4" />
               <span>Gallery</span>
+            </TabsTrigger>
+            <TabsTrigger value="manage" className="flex items-center space-x-2">
+              <Folder className="w-4 h-4" />
+              <span>Manage</span>
             </TabsTrigger>
           </TabsList>
           
@@ -286,6 +324,7 @@ export default function Home() {
                   onLayoutImproved={handleLayoutImproved}
                   activeTab={outputTab}
                   onTabChange={setOutputTab}
+                  currentLayoutId={currentLayoutId}
                 />
               </div>
             </div>
@@ -305,6 +344,30 @@ export default function Home() {
                   onLayoutImproved={handleLayoutImproved}
                   activeTab={outputTab}
                   onTabChange={setOutputTab}
+                  currentLayoutId={currentLayoutId}
+                />
+              </div>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="manage">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              <div className="lg:col-span-4">
+                <ProjectManagement 
+                  onSelectLayout={handleSelectLayoutForManagement}
+                  currentLayout={selectedLayoutForManagement}
+                />
+              </div>
+              
+              <div className="lg:col-span-8">
+                <OutputPanel 
+                  generatedCode={selectedLayoutForManagement?.generatedCode || currentCode}
+                  title={selectedLayoutForManagement?.title || currentTitle}
+                  isReady={!!(selectedLayoutForManagement || isReady)}
+                  onLayoutImproved={handleLayoutImproved}
+                  activeTab={outputTab}
+                  onTabChange={setOutputTab}
+                  currentLayoutId={selectedLayoutForManagement?.id || currentLayoutId}
                 />
               </div>
             </div>

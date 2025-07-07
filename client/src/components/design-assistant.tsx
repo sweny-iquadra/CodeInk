@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
 import { 
   Bot, 
@@ -21,8 +24,10 @@ import {
   X,
   Minimize2,
   Eye,
-  EyeOff
+  EyeOff,
+  Tag
 } from "lucide-react";
+import type { Category } from "@shared/schema";
 
 interface Message {
   id: string;
@@ -36,7 +41,7 @@ interface Message {
 
 interface DesignAssistantProps {
   currentCode?: string;
-  onCodeGenerate?: (description: string, additionalContext?: string, isPublic?: boolean) => void;
+  onCodeGenerate?: (description: string, additionalContext?: string, isPublic?: boolean, categoryId?: number) => void;
   onCodeImprove?: (feedback: string) => void;
   onSwitchToPreview?: () => void;
 }
@@ -65,8 +70,17 @@ export function DesignAssistant({
   const [inputValue, setInputValue] = useState("");
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
-  const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const { toast } = useToast();
+
+  // Get categories for dropdown
+  const { data: categories = [] } = useQuery({
+    queryKey: ["/api/categories"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/categories");
+      return await response.json();
+    }
+  });
 
   const chatMutation = useMutation({
     mutationFn: async ({ message, currentLayout, conversationHistory }: {
@@ -196,7 +210,7 @@ export function DesignAssistant({
     switch (actionType) {
       case 'generate':
         if (onCodeGenerate && actionData?.description) {
-          onCodeGenerate(actionData.description, actionData.additionalContext, isPublic);
+          onCodeGenerate(actionData.description, actionData.additionalContext, isPublic, selectedCategory);
           // Switch to preview mode for live preview
           if (onSwitchToPreview) {
             setTimeout(() => onSwitchToPreview(), 100);
@@ -509,6 +523,34 @@ export function DesignAssistant({
       </ScrollArea>
 
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+
+        {/* Category Selection */}
+        <div className="mb-3">
+          <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1 mb-2">
+            <Tag className="w-3 h-3" />
+            Category
+          </Label>
+          <Select value={selectedCategory?.toString() || "none"} onValueChange={(value) => setSelectedCategory(value === "none" ? null : parseInt(value))}>
+            <SelectTrigger className="h-8 text-xs">
+              <SelectValue placeholder="Choose category..." />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">No Category</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id.toString()}>
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-2 h-2 rounded-full" 
+                      style={{ backgroundColor: category.color }}
+                    />
+                    {category.name}
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         {/* Public/Private Toggle */}
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-medium text-foreground">Generated Layout Visibility</span>

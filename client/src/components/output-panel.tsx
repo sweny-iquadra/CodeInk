@@ -30,9 +30,10 @@ interface OutputPanelProps {
   onLayoutImproved?: (improvedLayout: { html: string; title: string; description: string }) => void;
   activeTab?: string;
   onTabChange?: (tab: string) => void;
+  currentLayoutId?: number;
 }
 
-export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutImproved, activeTab, onTabChange }: OutputPanelProps) {
+export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutImproved, activeTab, onTabChange, currentLayoutId }: OutputPanelProps) {
   const [activeView, setActiveView] = useState("code");
   
   // Use external activeTab if provided, otherwise use internal state
@@ -120,7 +121,12 @@ export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutI
 
   const improveMutation = useMutation({
     mutationFn: async ({ code, feedback }: { code: string; feedback?: string }) => {
-      const response = await apiRequest("POST", "/api/improve-layout", { code, feedback });
+      console.log("Improving layout with currentLayoutId:", currentLayoutId);
+      const response = await apiRequest("POST", "/api/improve-layout", { 
+        code, 
+        feedback,
+        originalLayoutId: currentLayoutId
+      });
       return response.json();
     },
     onSuccess: (data) => {
