@@ -623,25 +623,28 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
 
                 <div>
                   <Label className="text-sm font-medium">Date Range</Label>
-                  <div className="grid grid-cols-2 gap-2 mt-1">
-                    <div>
-                      <Label htmlFor="date-from" className="text-xs text-muted-foreground">From</Label>
+                  <div className="grid grid-cols-2 gap-3 mt-2">
+                    <div className="space-y-1">
+                      <Label htmlFor="date-from" className="text-xs text-muted-foreground font-medium">From Date</Label>
                       <Input
                         id="date-from"
                         type="date"
                         value={dateFrom}
                         onChange={(e) => setDateFrom(e.target.value)}
-                        className="w-full"
+                        className="w-full h-10 px-3 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground focus:bg-background focus:text-foreground transition-colors"
+                        placeholder="Select start date"
                       />
                     </div>
-                    <div>
-                      <Label htmlFor="date-to" className="text-xs text-muted-foreground">To</Label>
+                    <div className="space-y-1">
+                      <Label htmlFor="date-to" className="text-xs text-muted-foreground font-medium">To Date</Label>
                       <Input
                         id="date-to"
                         type="date"
                         value={dateTo}
                         onChange={(e) => setDateTo(e.target.value)}
-                        className="w-full"
+                        className="w-full h-10 px-3 py-2 border border-input bg-background hover:bg-accent hover:text-accent-foreground focus:bg-background focus:text-foreground transition-colors"
+                        placeholder="Select end date"
+                        min={dateFrom || undefined}
                       />
                     </div>
                   </div>

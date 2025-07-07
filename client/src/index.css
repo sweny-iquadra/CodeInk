@@ -82,15 +82,54 @@
 /* Date input styling */
 input[type="date"] {
   color-scheme: light dark;
+  position: relative;
+  min-height: 2.5rem;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.875rem;
+  line-height: 1.25rem;
 }
 
 input[type="date"]::-webkit-calendar-picker-indicator {
   opacity: 0.8;
   cursor: pointer;
+  padding: 0.25rem;
+  margin-left: 0.5rem;
+  border-radius: 0.25rem;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+  background-color: hsl(var(--accent));
 }
 
 .dark input[type="date"]::-webkit-calendar-picker-indicator {
   filter: invert(1);
+}
+
+/* Ensure date input shows proper contrast */
+input[type="date"]::-webkit-datetime-edit-text {
+  color: hsl(var(--foreground));
+  padding: 0 0.125rem;
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  color: hsl(var(--foreground));
+  padding: 0 0.125rem;
+}
+
+input[type="date"]:focus::-webkit-datetime-edit-text,
+input[type="date"]:focus::-webkit-datetime-edit-month-field,
+input[type="date"]:focus::-webkit-datetime-edit-day-field,
+input[type="date"]:focus::-webkit-datetime-edit-year-field {
+  color: hsl(var(--foreground));
+  background-color: hsl(var(--accent));
+}
+
+/* Placeholder styling for empty date inputs */
+input[type="date"]:invalid {
+  color: hsl(var(--muted-foreground));
 }
 
 /* Custom styles for code syntax highlighting */
