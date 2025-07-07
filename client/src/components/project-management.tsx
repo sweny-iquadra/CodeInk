@@ -206,20 +206,36 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
       const response = await apiRequest("DELETE", `/api/tags/${tagId}`);
       return response;
     },
-    onSuccess: () => {
+    onSuccess: (_, tagId) => {
+      // Immediately update the cache to remove the deleted tag
+      queryClient.setQueryData(["/api/tags"], (oldTags: TagType[] = []) => {
+        return oldTags.filter(tag => tag.id !== tagId);
+      });
+      // Also invalidate to ensure fresh data
       queryClient.invalidateQueries({ queryKey: ["/api/tags"] });
-      // Also invalidate layout tags queries since tag associations were removed
       queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({ title: "Tag deleted successfully" });
     },
-    onError: (error: any) => {
+    onError: (error: any, tagId) => {
       console.error("Tag deletion error:", error);
       const errorMessage = error.message || "Failed to delete tag";
-      toast({ 
-        title: "Error deleting tag", 
-        description: errorMessage.includes("Tag not found") ? "This tag may have already been deleted." : errorMessage,
-        variant: "destructive" 
-      });
+      
+      // If tag not found, it might already be deleted - remove from cache
+      if (errorMessage.includes("Tag not found")) {
+        queryClient.setQueryData(["/api/tags"], (oldTags: TagType[] = []) => {
+          return oldTags.filter(tag => tag.id !== tagId);
+        });
+        toast({ 
+          title: "Tag removed", 
+          description: "This tag was already deleted."
+        });
+      } else {
+        toast({ 
+          title: "Error deleting tag", 
+          description: errorMessage,
+          variant: "destructive" 
+        });
+      }
     }
   });
 
@@ -517,13 +533,11 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                     <span>{tag.name}</span>
                     <button
                       className="delete-tag-btn ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 dark:hover:bg-red-800 rounded-full p-0.5"
-                      onClick={(e) => {
+                      onClick={async (e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         console.log("Attempting to delete tag:", { id: tag.id, name: tag.name });
                         if (window.confirm(`Are you sure you want to delete the tag "${tag.name}"?`)) {
-                          // Force refresh tags before deletion to ensure we have latest data
-                          queryClient.invalidateQueries({ queryKey: ["/api/tags"] });
                           deleteTagMutation.mutate(tag.id);
                         }
                       }}
