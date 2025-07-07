@@ -1,16 +1,20 @@
 import { useState, useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Upload, Pen, CloudUpload, Wand2, Eye, EyeOff } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Upload, Pen, CloudUpload, Wand2, Eye, EyeOff, Tag } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { PromptExamples } from "./prompt-examples";
+import { apiRequest } from "@/lib/queryClient";
+import type { Category } from "@shared/schema";
 
 interface InputPanelProps {
-  onGenerate: (data: { type: 'text' | 'image'; description?: string; additionalContext?: string; file?: File; isPublic?: boolean }) => void;
+  onGenerate: (data: { type: 'text' | 'image'; description?: string; additionalContext?: string; file?: File; isPublic?: boolean; categoryId?: number }) => void;
   isLoading: boolean;
 }
 
@@ -21,8 +25,18 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [dragActive, setDragActive] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
+
+  // Get categories for dropdown
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories"],
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/categories");
+      return await response.json();
+    }
+  });
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -90,6 +104,7 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
         file: selectedFile,
         additionalContext,
         isPublic,
+        categoryId: selectedCategory,
       });
     } else {
       if (!description.trim()) {
@@ -105,6 +120,7 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
         description,
         additionalContext,
         isPublic,
+        categoryId: selectedCategory,
       });
     }
   };
@@ -205,6 +221,33 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
               value={additionalContext}
               onChange={(e) => setAdditionalContext(e.target.value)}
             />
+          </div>
+
+          {/* Category Selection */}
+          <div className="mt-6">
+            <Label className="text-base font-semibold text-foreground flex items-center gap-2">
+              <Tag className="w-4 h-4" />
+              Category <span className="text-muted-foreground font-normal">(Optional)</span>
+            </Label>
+            <Select value={selectedCategory?.toString() || "none"} onValueChange={(value) => setSelectedCategory(value === "none" ? null : parseInt(value))}>
+              <SelectTrigger className="mt-3 border-2 rounded-xl text-base focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all">
+                <SelectValue placeholder="Choose a category..." />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No Category</SelectItem>
+                {categories.map((category) => (
+                  <SelectItem key={category.id} value={category.id.toString()}>
+                    <div className="flex items-center gap-2">
+                      <div 
+                        className="w-3 h-3 rounded-full" 
+                        style={{ backgroundColor: category.color }}
+                      />
+                      {category.name}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           {/* Visibility Toggle */}

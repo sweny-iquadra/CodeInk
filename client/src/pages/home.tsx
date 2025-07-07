@@ -32,7 +32,7 @@ export default function Home() {
   const queryClient = useQueryClient();
 
   const generateFromTextMutation = useMutation({
-    mutationFn: async ({ description, additionalContext, isPublic }: { description: string; additionalContext?: string; isPublic?: boolean }) => {
+    mutationFn: async ({ description, additionalContext, isPublic, categoryId }: { description: string; additionalContext?: string; isPublic?: boolean; categoryId?: number }) => {
       const controller = new AbortController();
       setAbortController(controller);
       
@@ -40,6 +40,7 @@ export default function Home() {
         description,
         additionalContext,
         isPublic: isPublic || false,
+        categoryId,
       }, controller.signal);
       return response.json();
     },
@@ -73,7 +74,7 @@ export default function Home() {
   });
 
   const generateFromImageMutation = useMutation({
-    mutationFn: async ({ file, additionalContext, isPublic }: { file: File; additionalContext?: string; isPublic?: boolean }) => {
+    mutationFn: async ({ file, additionalContext, isPublic, categoryId }: { file: File; additionalContext?: string; isPublic?: boolean; categoryId?: number }) => {
       const controller = new AbortController();
       setAbortController(controller);
       
@@ -83,6 +84,9 @@ export default function Home() {
         formData.append("additionalContext", additionalContext);
       }
       formData.append("isPublic", String(isPublic || false));
+      if (categoryId) {
+        formData.append("categoryId", String(categoryId));
+      }
 
       // Use authenticated fetch with JWT token for file uploads
       const accessToken = localStorage.getItem("auth_token");
@@ -181,18 +185,21 @@ export default function Home() {
     additionalContext?: string; 
     file?: File;
     isPublic?: boolean;
+    categoryId?: number;
   }) => {
     if (data.type === 'text' && data.description) {
       generateFromTextMutation.mutate({
         description: data.description,
         additionalContext: data.additionalContext,
         isPublic: data.isPublic,
+        categoryId: data.categoryId,
       });
     } else if (data.type === 'image' && data.file) {
       generateFromImageMutation.mutate({
         file: data.file,
         additionalContext: data.additionalContext,
         isPublic: data.isPublic,
+        categoryId: data.categoryId,
       });
     }
   };
@@ -214,11 +221,12 @@ export default function Home() {
     queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
   };
 
-  const handleAssistantCodeGenerate = (description: string, additionalContext?: string, isPublic?: boolean) => {
+  const handleAssistantCodeGenerate = (description: string, additionalContext?: string, isPublic?: boolean, categoryId?: number) => {
     generateFromTextMutation.mutate({
       description,
       additionalContext,
       isPublic: isPublic ?? false, // Default to private if not specified
+      categoryId,
     });
   };
 

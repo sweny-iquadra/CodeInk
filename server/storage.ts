@@ -145,22 +145,62 @@ export class DatabaseStorage implements IStorage {
 
   async getUserLayouts(userId: number, limit = 10): Promise<GeneratedLayout[]> {
     const layouts = await db
-      .select()
+      .select({
+        id: generatedLayouts.id,
+        title: generatedLayouts.title,
+        description: generatedLayouts.description,
+        inputMethod: generatedLayouts.inputMethod,
+        generatedCode: generatedLayouts.generatedCode,
+        additionalContext: generatedLayouts.additionalContext,
+        userId: generatedLayouts.userId,
+        isPublic: generatedLayouts.isPublic,
+        categoryId: generatedLayouts.categoryId,
+        parentLayoutId: generatedLayouts.parentLayoutId,
+        versionNumber: generatedLayouts.versionNumber,
+        changesDescription: generatedLayouts.changesDescription,
+        createdAt: generatedLayouts.createdAt,
+        category: {
+          id: categories.id,
+          name: categories.name,
+          color: categories.color,
+        }
+      })
       .from(generatedLayouts)
+      .leftJoin(categories, eq(generatedLayouts.categoryId, categories.id))
       .where(eq(generatedLayouts.userId, userId))
       .orderBy(desc(generatedLayouts.createdAt))
       .limit(limit);
-    return layouts;
+    return layouts as any;
   }
 
   async getPublicLayouts(limit = 10): Promise<GeneratedLayout[]> {
     const layouts = await db
-      .select()
+      .select({
+        id: generatedLayouts.id,
+        title: generatedLayouts.title,
+        description: generatedLayouts.description,
+        inputMethod: generatedLayouts.inputMethod,
+        generatedCode: generatedLayouts.generatedCode,
+        additionalContext: generatedLayouts.additionalContext,
+        userId: generatedLayouts.userId,
+        isPublic: generatedLayouts.isPublic,
+        categoryId: generatedLayouts.categoryId,
+        parentLayoutId: generatedLayouts.parentLayoutId,
+        versionNumber: generatedLayouts.versionNumber,
+        changesDescription: generatedLayouts.changesDescription,
+        createdAt: generatedLayouts.createdAt,
+        category: {
+          id: categories.id,
+          name: categories.name,
+          color: categories.color,
+        }
+      })
       .from(generatedLayouts)
+      .leftJoin(categories, eq(generatedLayouts.categoryId, categories.id))
       .where(eq(generatedLayouts.isPublic, true))
       .orderBy(desc(generatedLayouts.createdAt))
       .limit(limit);
-    return layouts;
+    return layouts as any;
   }
 
   async getLayout(id: number): Promise<GeneratedLayout | undefined> {

@@ -99,7 +99,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate code from text description (protected)
   app.post("/api/generate-from-text", authenticateToken, async (req, res) => {
     try {
-      const { description, additionalContext, isPublic } = req.body;
+      const { description, additionalContext, isPublic, categoryId } = req.body;
 
       if (!description) {
         return res.status(400).json({ message: "Description is required" });
@@ -119,6 +119,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         additionalContext,
         userId: req.user!.userId,
         isPublic: Boolean(isPublic),
+        categoryId: categoryId ? parseInt(categoryId) : null,
       });
 
       res.json({ ...result, id: layout.id });
@@ -135,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Image file is required" });
       }
 
-      const { additionalContext, isPublic } = req.body;
+      const { additionalContext, isPublic, categoryId } = req.body;
       const imageBase64 = req.file.buffer.toString("base64");
 
       const result = await analyzeImageAndGenerateCode(imageBase64, additionalContext);
@@ -149,6 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         additionalContext,
         userId: req.user!.userId,
         isPublic: Boolean(isPublic === 'true'),
+        categoryId: categoryId ? parseInt(categoryId) : null,
       });
 
       res.json({ ...result, id: layout.id });
