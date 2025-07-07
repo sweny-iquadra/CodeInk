@@ -5,9 +5,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
+
 import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Upload, Pen, CloudUpload, Wand2, Eye, EyeOff, Tag } from "lucide-react";
+
 import { useToast } from "@/hooks/use-toast";
 import { PromptExamples } from "./prompt-examples";
 import { apiRequest } from "@/lib/queryClient";
@@ -121,6 +123,7 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
         additionalContext,
         isPublic,
         categoryId: selectedCategory,
+
       });
     }
   };
@@ -222,6 +225,7 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
               onChange={(e) => setAdditionalContext(e.target.value)}
             />
           </div>
+
 
           {/* Category Selection */}
           <div className="mt-6">

@@ -35,7 +35,9 @@ export default function Home() {
   const queryClient = useQueryClient();
 
   const generateFromTextMutation = useMutation({
+
     mutationFn: async ({ description, additionalContext, isPublic, categoryId }: { description: string; additionalContext?: string; isPublic?: boolean; categoryId?: number }) => {
+
       const controller = new AbortController();
       setAbortController(controller);
       
@@ -78,6 +80,7 @@ export default function Home() {
   });
 
   const generateFromImageMutation = useMutation({
+
     mutationFn: async ({ file, additionalContext, isPublic, categoryId }: { file: File; additionalContext?: string; isPublic?: boolean; categoryId?: number }) => {
       const controller = new AbortController();
       setAbortController(controller);
@@ -87,9 +90,11 @@ export default function Home() {
       if (additionalContext) {
         formData.append("additionalContext", additionalContext);
       }
+
       formData.append("isPublic", String(isPublic || false));
       if (categoryId) {
         formData.append("categoryId", String(categoryId));
+
       }
 
       // Use authenticated fetch with JWT token for file uploads
@@ -195,6 +200,7 @@ export default function Home() {
     file?: File;
     isPublic?: boolean;
     categoryId?: number;
+
   }) => {
     if (data.type === 'text' && data.description) {
       generateFromTextMutation.mutate({
@@ -209,6 +215,7 @@ export default function Home() {
         additionalContext: data.additionalContext,
         isPublic: data.isPublic,
         categoryId: data.categoryId,
+
       });
     }
   };

@@ -101,6 +101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { description, additionalContext, isPublic, categoryId } = req.body;
 
+
       if (!description) {
         return res.status(400).json({ message: "Description is required" });
       }
@@ -139,6 +140,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
 
       const { additionalContext, isPublic, categoryId } = req.body;
+
       const imageBase64 = req.file.buffer.toString("base64");
 
       const result = await analyzeImageAndGenerateCode(imageBase64, additionalContext);
