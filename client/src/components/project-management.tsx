@@ -200,6 +200,49 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     }
   });
 
+  const deleteTagMutation = useMutation({
+    mutationFn: async (tagId: number) => {
+      console.log("Deleting tag with ID:", tagId);
+      try {
+        const response = await apiRequest("DELETE", `/api/tags/${tagId}`);
+        return { success: true, tagId };
+      } catch (error: any) {
+        // Check if it's a 404 (already deleted) vs other errors
+        if (error.message && error.message.includes("Tag not found")) {
+          return { success: false, alreadyDeleted: true, tagId };
+        }
+        throw error;
+      }
+    },
+    onSuccess: (result) => {
+      // Update cache to remove the tag
+      queryClient.setQueryData(["/api/tags"], (oldTags: TagType[] = []) => {
+        return oldTags.filter(tag => tag.id !== result.tagId);
+      });
+      
+      if (result.success) {
+        toast({ title: "Tag deleted successfully" });
+      } else if (result.alreadyDeleted) {
+        toast({ 
+          title: "Tag removed", 
+          description: "This tag was already deleted."
+        });
+      }
+      
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/tags"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
+    },
+    onError: (error: any) => {
+      console.error("Tag deletion error:", error);
+      toast({ 
+        title: "Error deleting tag", 
+        description: error.message || "Failed to delete tag",
+        variant: "destructive" 
+      });
+    }
+  });
+
   const createTeamMutation = useMutation({
     mutationFn: (data: CreateTeamRequest) => 
       apiRequest("POST", "/api/teams", data),
@@ -477,9 +520,13 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                   <Badge
                     key={tag.id}
                     variant="secondary"
-                    className="text-xs cursor-pointer"
+                    className="text-xs cursor-pointer group flex items-center gap-1 hover:bg-red-50 dark:hover:bg-red-900/20"
                     style={{ backgroundColor: tag.color + "20", color: tag.color }}
-                    onClick={() => {
+                    onClick={(e) => {
+                      // Prevent the click from bubbling up when clicking the X button
+                      if ((e.target as HTMLElement).closest('.delete-tag-btn')) {
+                        return;
+                      }
                       setSelectedTags(prev => 
                         prev.includes(tag.id) 
                           ? prev.filter(id => id !== tag.id)
@@ -487,7 +534,21 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                       );
                     }}
                   >
-                    {tag.name}
+                    <span>{tag.name}</span>
+                    <button
+                      className="delete-tag-btn ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 dark:hover:bg-red-800 rounded-full p-0.5"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        console.log("Attempting to delete tag:", { id: tag.id, name: tag.name });
+                        if (window.confirm(`Are you sure you want to delete the tag "${tag.name}"?`)) {
+                          deleteTagMutation.mutate(tag.id);
+                        }
+                      }}
+                      title={`Delete tag "${tag.name}"`}
+                    >
+                      <X className="w-3 h-3 text-red-600 dark:text-red-400" />
+                    </button>
                   </Badge>
                 ))}
               </div>

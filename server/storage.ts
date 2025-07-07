@@ -308,10 +308,28 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTag(id: number, userId: number): Promise<boolean> {
-    const result = await db
+    // First verify the tag exists and belongs to the user
+    const existingTag = await db
+      .select()
+      .from(tags)
+      .where(and(eq(tags.id, id), eq(tags.userId, userId)))
+      .limit(1);
+    
+    if (existingTag.length === 0) {
+      return false; // Tag not found or not owned by user
+    }
+    
+    // Remove all layout-tag associations for this tag
+    await db
+      .delete(layoutTags)
+      .where(eq(layoutTags.tagId, id));
+    
+    // Then delete the tag itself
+    await db
       .delete(tags)
       .where(and(eq(tags.id, id), eq(tags.userId, userId)));
-    return result.rowCount > 0;
+    
+    return true; // Success since we verified it exists before deletion
   }
 
   async addTagToLayout(layoutId: number, tagId: number): Promise<LayoutTag> {
