@@ -201,8 +201,11 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
   });
 
   const deleteTagMutation = useMutation({
-    mutationFn: (tagId: number) => 
-      apiRequest("DELETE", `/api/tags/${tagId}`),
+    mutationFn: async (tagId: number) => {
+      console.log("Deleting tag with ID:", tagId);
+      const response = await apiRequest("DELETE", `/api/tags/${tagId}`);
+      return response;
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tags"] });
       // Also invalidate layout tags queries since tag associations were removed
@@ -210,7 +213,13 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
       toast({ title: "Tag deleted successfully" });
     },
     onError: (error: any) => {
-      toast({ title: "Error deleting tag", description: error.message, variant: "destructive" });
+      console.error("Tag deletion error:", error);
+      const errorMessage = error.message || "Failed to delete tag";
+      toast({ 
+        title: "Error deleting tag", 
+        description: errorMessage.includes("Tag not found") ? "This tag may have already been deleted." : errorMessage,
+        variant: "destructive" 
+      });
     }
   });
 
@@ -511,7 +520,10 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
+                        console.log("Attempting to delete tag:", { id: tag.id, name: tag.name });
                         if (window.confirm(`Are you sure you want to delete the tag "${tag.name}"?`)) {
+                          // Force refresh tags before deletion to ensure we have latest data
+                          queryClient.invalidateQueries({ queryKey: ["/api/tags"] });
                           deleteTagMutation.mutate(tag.id);
                         }
                       }}

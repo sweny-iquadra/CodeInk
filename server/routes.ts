@@ -463,12 +463,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.delete("/api/tags/:id", authenticateToken, async (req, res) => {
     try {
       const tagId = parseInt(req.params.id);
+      console.log(`Attempting to delete tag ${tagId} for user ${req.user!.userId}`);
+      
+      if (isNaN(tagId)) {
+        return res.status(400).json({ message: "Invalid tag ID" });
+      }
+      
       const success = await storage.deleteTag(tagId, req.user!.userId);
       
       if (!success) {
-        return res.status(404).json({ message: "Tag not found" });
+        console.log(`Tag ${tagId} not found or not owned by user ${req.user!.userId}`);
+        return res.status(404).json({ message: "Tag not found or you don't have permission to delete it" });
       }
       
+      console.log(`Successfully deleted tag ${tagId}`);
       res.status(204).send();
     } catch (error: unknown) {
       console.error("Error deleting tag:", error);
