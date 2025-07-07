@@ -135,13 +135,21 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
 
   const { data: layoutVersions = [] } = useQuery({
     queryKey: ["/api/layouts", selectedLayout, "versions"],
-    queryFn: () => apiRequest("GET", `/api/layouts/${selectedLayout}/versions`),
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/layouts/${selectedLayout}/versions`);
+      return await response.json();
+    },
     enabled: !!selectedLayout
   });
 
   const { data: versionHistory = [] } = useQuery({
     queryKey: ["/api/layouts", selectedLayout, "history"],
-    queryFn: () => apiRequest("GET", `/api/layouts/${selectedLayout}/history`),
+    queryFn: async () => {
+      const response = await apiRequest("GET", `/api/layouts/${selectedLayout}/history`);
+      const jsonData = await response.json();
+      console.log('Parsed JSON data:', jsonData);
+      return jsonData;
+    },
     enabled: !!selectedLayout
   });
 
@@ -507,8 +515,8 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {console.log('versionHistory:', versionHistory, 'selectedLayout:', selectedLayout)}
-                      {versionHistory && versionHistory.length > 0 ? (
+                      {console.log('versionHistory:', versionHistory, 'type:', typeof versionHistory, 'selectedLayout:', selectedLayout)}
+                      {Array.isArray(versionHistory) && versionHistory.length > 0 ? (
                         versionHistory.map((version: GeneratedLayout) => (
                           <div
                             key={version.id}
@@ -528,7 +536,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                         <div className="text-sm text-muted-foreground text-center py-4">
                           No versions created yet. Create your first version above.
                           <br />
-                          <small>Selected Layout: {selectedLayout} | History Count: {versionHistory?.length || 0}</small>
+                          <small>Selected Layout: {selectedLayout} | History Count: {Array.isArray(versionHistory) ? versionHistory.length : 0} | Type: {typeof versionHistory}</small>
                         </div>
                       )}
                     </div>
