@@ -205,6 +205,8 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
       apiRequest("DELETE", `/api/tags/${tagId}`),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/tags"] });
+      // Also invalidate layout tags queries since tag associations were removed
+      queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
       toast({ title: "Tag deleted successfully" });
     },
     onError: (error: any) => {

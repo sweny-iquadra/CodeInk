@@ -308,6 +308,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteTag(id: number, userId: number): Promise<boolean> {
+    // First, remove all layout-tag associations for this tag
+    await db
+      .delete(layoutTags)
+      .where(eq(layoutTags.tagId, id));
+    
+    // Then delete the tag itself
     const result = await db
       .delete(tags)
       .where(and(eq(tags.id, id), eq(tags.userId, userId)));
