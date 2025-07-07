@@ -460,6 +460,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/tags/:id", authenticateToken, async (req, res) => {
+    try {
+      const tagId = parseInt(req.params.id);
+      const success = await storage.deleteTag(tagId, req.user!.userId);
+      
+      if (!success) {
+        return res.status(404).json({ message: "Tag not found" });
+      }
+      
+      res.status(204).send();
+    } catch (error: unknown) {
+      console.error("Error deleting tag:", error);
+      res.status(500).json({ message: "Failed to delete tag" });
+    }
+  });
+
   app.post("/api/layouts/:layoutId/tags/:tagId", authenticateToken, async (req, res) => {
     try {
       const layoutId = parseInt(req.params.layoutId);
