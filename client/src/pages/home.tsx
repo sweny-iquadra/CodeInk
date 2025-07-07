@@ -149,6 +149,8 @@ export default function Home() {
       const controller = new AbortController();
       setAbortController(controller);
       
+      console.log("Improving layout with currentLayoutId:", currentLayoutId);
+      
       const response = await apiRequest("POST", "/api/improve-layout", {
         code: currentCode,
         feedback,

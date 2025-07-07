@@ -250,14 +250,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const { code, feedback, originalLayoutId } = req.body;
 
+      console.log("Improve layout request:", { originalLayoutId, hasCode: !!code, feedback: feedback?.substring(0, 50) });
+
       if (!code) {
         return res.status(400).json({ message: "Code is required" });
       }
 
       const result = await improveLayout(code, feedback);
 
-      // If we have an original layout ID, create a version; otherwise create a new layout
-      if (originalLayoutId) {
+      // Always try to create a version if we have an original layout ID
+      if (originalLayoutId && !isNaN(originalLayoutId)) {
+        console.log(`Creating version for layout ID: ${originalLayoutId}`);
         // Get the original layout to determine the next version number
         const originalLayout = await storage.getLayout(originalLayoutId);
         if (originalLayout && originalLayout.userId === req.user!.userId) {
@@ -265,9 +268,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const versions = await storage.getLayoutVersions(originalLayoutId);
           const nextVersionNumber = `v1.${versions.length + 1}`;
           
+          console.log(`Creating version ${nextVersionNumber} for layout: ${originalLayout.title}`);
+          
           const versionLayout = await storage.createLayoutVersion(originalLayoutId, {
-            title: originalLayout.title,
-            description: result.description,
+            title: originalLayout.title, // Keep the same title as original
+            description: originalLayout.description, // Keep original description  
             inputMethod: "improve",
             generatedCode: result.html,
             additionalContext: feedback,
@@ -278,11 +283,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
             changesDescription: `Improved layout: ${feedback || "AI-suggested enhancements"}`
           });
           
-          return res.json({ ...result, id: versionLayout.id, versionNumber: nextVersionNumber });
+          console.log(`Version created with ID: ${versionLayout.id}, version: ${nextVersionNumber}`);
+          return res.json({ 
+            ...result, 
+            id: versionLayout.id, 
+            versionNumber: nextVersionNumber,
+            title: originalLayout.title // Return original title 
+          });
+        } else {
+          console.log(`Original layout not found or user doesn't own it: ${originalLayoutId}`);
         }
+      } else {
+        console.log(`No valid originalLayoutId provided: ${originalLayoutId}`);
       }
 
       // Create new layout if no original layout ID or user doesn't own it
+      console.log("Creating new standalone improved layout");
       const layout = await storage.createLayout({
         title: `Improved: ${result.title}`,
         description: result.description,
@@ -292,6 +308,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         userId: req.user!.userId,
         isPublic: false,
         categoryId: null,
+        versionNumber: "v1.0",
+        changesDescription: "Initial version created from improvement"
       });
 
       res.json({ ...result, id: layout.id });
