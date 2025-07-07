@@ -71,6 +71,7 @@ export function DesignAssistant({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const scrollAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
   // Get categories for dropdown
@@ -210,7 +211,7 @@ export function DesignAssistant({
     switch (actionType) {
       case 'generate':
         if (onCodeGenerate && actionData?.description) {
-          onCodeGenerate(actionData.description, actionData.additionalContext, isPublic, selectedCategory);
+          onCodeGenerate(actionData.description, actionData.additionalContext, isPublic, selectedCategory || undefined);
           // Switch to preview mode for live preview
           if (onSwitchToPreview) {
             setTimeout(() => onSwitchToPreview(), 100);
@@ -523,7 +524,6 @@ export function DesignAssistant({
       </ScrollArea>
 
       <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-
         {/* Category Selection */}
         <div className="mb-3">
           <Label className="text-xs font-medium text-muted-foreground flex items-center gap-1 mb-2">
