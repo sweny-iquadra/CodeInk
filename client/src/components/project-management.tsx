@@ -555,17 +555,26 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                         <div className="space-y-4">
                           <Label className="text-xs">Available Tags</Label>
                           <div className="max-h-48 overflow-y-auto space-y-2">
-                            {tags.filter(tag => !currentLayoutTags.some(current => current.id === tag.id)).map((tag: TagType) => (
+                            {tags.filter(tag => !safeCurrentLayoutTags.some(current => current.id === tag.id)).map((tag: TagType) => (
                               <div
                                 key={tag.id}
                                 className="flex items-center justify-between p-2 border rounded cursor-pointer hover:bg-accent"
                                 onClick={(e) => {
                                   e.preventDefault();
                                   console.log("Clicked tag:", tag, "Current layout:", currentLayout);
-                                  if (currentLayout?.id && tag.id) {
+                                  if (currentLayout?.id && currentLayout.id > 0 && !isNaN(currentLayout.id) && tag.id) {
                                     addTagMutation.mutate({ layoutId: currentLayout.id, tagId: tag.id });
                                   } else {
-                                    console.error("Missing data:", { layoutId: currentLayout?.id, tagId: tag.id });
+                                    console.error("Invalid layout or tag data:", { 
+                                      layoutId: currentLayout?.id, 
+                                      tagId: tag.id,
+                                      isValidLayout: !!(currentLayout?.id && currentLayout.id > 0 && !isNaN(currentLayout.id))
+                                    });
+                                    toast({ 
+                                      title: "Invalid Layout", 
+                                      description: "Please select a valid layout first", 
+                                      variant: "destructive" 
+                                    });
                                   }
                                 }}
                               >
@@ -579,7 +588,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                                 <Plus className="h-4 w-4 text-muted-foreground" />
                               </div>
                             ))}
-                            {tags.filter(tag => !currentLayoutTags.some(current => current.id === tag.id)).length === 0 && (
+                            {tags.filter(tag => !safeCurrentLayoutTags.some(current => current.id === tag.id)).length === 0 && (
                               <p className="text-sm text-muted-foreground text-center py-4">
                                 All tags have been assigned to this layout
                               </p>
@@ -590,10 +599,10 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                     </Dialog>
                   </div>
                   <div className="flex flex-wrap gap-1">
-                    {currentLayoutTags.length === 0 ? (
+                    {safeCurrentLayoutTags.length === 0 ? (
                       <p className="text-xs text-muted-foreground">No tags assigned</p>
                     ) : (
-                      currentLayoutTags.map((tag: TagType) => (
+                      safeCurrentLayoutTags.map((tag: TagType) => (
                         <Badge
                           key={tag.id}
                           variant="secondary"
@@ -609,8 +618,14 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                               e.preventDefault();
                               e.stopPropagation();
                               console.log("Removing tag:", tag, "from layout:", currentLayout?.id);
-                              if (currentLayout?.id && tag.id) {
+                              if (currentLayout?.id && currentLayout.id > 0 && !isNaN(currentLayout.id) && tag.id) {
                                 removeTagMutation.mutate({ layoutId: currentLayout.id, tagId: tag.id });
+                              } else {
+                                toast({ 
+                                  title: "Invalid Layout", 
+                                  description: "Cannot remove tag from invalid layout", 
+                                  variant: "destructive" 
+                                });
                               }
                             }}
                           >

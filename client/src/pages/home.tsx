@@ -28,6 +28,7 @@ export default function Home() {
   const [isReady, setIsReady] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [outputTab, setOutputTab] = useState("code");
+  const [selectedLayoutForManagement, setSelectedLayoutForManagement] = useState<GeneratedLayout | undefined>(undefined);
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -214,6 +215,14 @@ export default function Home() {
     });
   };
 
+  const handleSelectLayoutForManagement = (layout: GeneratedLayout) => {
+    setSelectedLayoutForManagement(layout);
+    toast({
+      title: "Layout selected",
+      description: `Selected "${layout.title}" for project management.`,
+    });
+  };
+
   const handleLayoutImproved = (improvedLayout: { html: string; title: string; description: string }) => {
     setCurrentCode(improvedLayout.html);
     setCurrentTitle(improvedLayout.title);
@@ -325,30 +334,16 @@ export default function Home() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
               <div className="lg:col-span-4">
                 <ProjectManagement 
-                  onSelectLayout={handleSelectLayout}
-                  currentLayout={isReady ? {
-                    id: 0,
-                    title: currentTitle,
-                    description: "",
-                    inputMethod: "text",
-                    generatedCode: currentCode,
-                    additionalContext: null,
-                    userId: null,
-                    isPublic: false,
-                    categoryId: null,
-                    parentLayoutId: null,
-                    versionNumber: "1.0",
-                    changesDescription: null,
-                    createdAt: new Date()
-                  } : undefined}
+                  onSelectLayout={handleSelectLayoutForManagement}
+                  currentLayout={selectedLayoutForManagement}
                 />
               </div>
               
               <div className="lg:col-span-8">
                 <OutputPanel 
-                  generatedCode={currentCode}
-                  title={currentTitle}
-                  isReady={isReady}
+                  generatedCode={selectedLayoutForManagement?.generatedCode || currentCode}
+                  title={selectedLayoutForManagement?.title || currentTitle}
+                  isReady={!!(selectedLayoutForManagement || isReady)}
                   onLayoutImproved={handleLayoutImproved}
                   activeTab={outputTab}
                   onTabChange={setOutputTab}
