@@ -623,21 +623,27 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
 
                 <div>
                   <Label className="text-sm font-medium">Date Range</Label>
-                  <div className="flex gap-2 mt-1">
-                    <Input
-                      type="date"
-                      value={dateFrom}
-                      onChange={(e) => setDateFrom(e.target.value)}
-                      placeholder="From"
-                      className="flex-1"
-                    />
-                    <Input
-                      type="date"
-                      value={dateTo}
-                      onChange={(e) => setDateTo(e.target.value)}
-                      placeholder="To"
-                      className="flex-1"
-                    />
+                  <div className="grid grid-cols-2 gap-2 mt-1">
+                    <div>
+                      <Label htmlFor="date-from" className="text-xs text-muted-foreground">From</Label>
+                      <Input
+                        id="date-from"
+                        type="date"
+                        value={dateFrom}
+                        onChange={(e) => setDateFrom(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="date-to" className="text-xs text-muted-foreground">To</Label>
+                      <Input
+                        id="date-to"
+                        type="date"
+                        value={dateTo}
+                        onChange={(e) => setDateTo(e.target.value)}
+                        className="w-full"
+                      />
+                    </div>
                   </div>
                 </div>
               </div>

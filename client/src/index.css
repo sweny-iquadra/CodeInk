@@ -79,6 +79,20 @@
   }
 }
 
+/* Date input styling */
+input[type="date"] {
+  color-scheme: light dark;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator {
+  opacity: 0.8;
+  cursor: pointer;
+}
+
+.dark input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1);
+}
+
 /* Custom styles for code syntax highlighting */
 .code-bg {
   background-color: hsl(240, 10%, 3.9%);
