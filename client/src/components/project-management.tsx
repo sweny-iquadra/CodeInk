@@ -219,26 +219,34 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
 
   // Tag assignment mutations
   const addTagMutation = useMutation({
-    mutationFn: ({ layoutId, tagId }: { layoutId: number, tagId: number }) =>
-      apiRequest("POST", `/api/layouts/${layoutId}/tags/${tagId}`),
-    onSuccess: () => {
+    mutationFn: ({ layoutId, tagId }: { layoutId: number, tagId: number }) => {
+      console.log("Adding tag:", { layoutId, tagId });
+      return apiRequest("POST", `/api/layouts/${layoutId}/tags/${tagId}`);
+    },
+    onSuccess: (data) => {
+      console.log("Tag added successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts", currentLayout?.id, "tags"] });
       setAddTagDialog(false);
       toast({ title: "Tag added successfully" });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Failed to add tag:", error);
       toast({ title: "Failed to add tag", variant: "destructive" });
     }
   });
 
   const removeTagMutation = useMutation({
-    mutationFn: ({ layoutId, tagId }: { layoutId: number, tagId: number }) =>
-      apiRequest("DELETE", `/api/layouts/${layoutId}/tags/${tagId}`),
-    onSuccess: () => {
+    mutationFn: ({ layoutId, tagId }: { layoutId: number, tagId: number }) => {
+      console.log("Removing tag:", { layoutId, tagId });
+      return apiRequest("DELETE", `/api/layouts/${layoutId}/tags/${tagId}`);
+    },
+    onSuccess: (data) => {
+      console.log("Tag removed successfully:", data);
       queryClient.invalidateQueries({ queryKey: ["/api/layouts", currentLayout?.id, "tags"] });
       toast({ title: "Tag removed successfully" });
     },
-    onError: () => {
+    onError: (error) => {
+      console.error("Failed to remove tag:", error);
       toast({ title: "Failed to remove tag", variant: "destructive" });
     }
   });
@@ -551,9 +559,13 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                               <div
                                 key={tag.id}
                                 className="flex items-center justify-between p-2 border rounded cursor-pointer hover:bg-accent"
-                                onClick={() => {
-                                  if (currentLayout?.id) {
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  console.log("Clicked tag:", tag, "Current layout:", currentLayout);
+                                  if (currentLayout?.id && tag.id) {
                                     addTagMutation.mutate({ layoutId: currentLayout.id, tagId: tag.id });
+                                  } else {
+                                    console.error("Missing data:", { layoutId: currentLayout?.id, tagId: tag.id });
                                   }
                                 }}
                               >
@@ -593,8 +605,11 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                             size="sm"
                             variant="ghost"
                             className="h-3 w-3 p-0 hover:bg-transparent"
-                            onClick={() => {
-                              if (currentLayout?.id) {
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log("Removing tag:", tag, "from layout:", currentLayout?.id);
+                              if (currentLayout?.id && tag.id) {
                                 removeTagMutation.mutate({ layoutId: currentLayout.id, tagId: tag.id });
                               }
                             }}

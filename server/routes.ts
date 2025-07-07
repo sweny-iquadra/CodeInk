@@ -423,6 +423,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
     try {
       const layoutId = parseInt(req.params.layoutId);
       const tagId = parseInt(req.params.tagId);
+      
+      if (isNaN(layoutId) || isNaN(tagId)) {
+        return res.status(400).json({ message: "Invalid layout ID or tag ID" });
+      }
+      
+      console.log("Removing tag from layout:", { layoutId, tagId });
       const success = await storage.removeTagFromLayout(layoutId, tagId);
       
       if (!success) {
@@ -439,6 +445,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/layouts/:layoutId/tags", async (req, res) => {
     try {
       const layoutId = parseInt(req.params.layoutId);
+      
+      if (isNaN(layoutId)) {
+        return res.status(400).json({ message: "Invalid layout ID" });
+      }
+      
+      console.log("Fetching tags for layout:", layoutId);
       const tags = await storage.getLayoutTags(layoutId);
       res.json(tags);
     } catch (error: unknown) {
