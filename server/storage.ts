@@ -340,8 +340,17 @@ export class DatabaseStorage implements IStorage {
       .delete(layoutTags)
       .where(and(eq(layoutTags.layoutId, layoutId), eq(layoutTags.tagId, tagId)));
     
-    console.log(`Delete result: ${result.rowCount} rows affected`);
-    return result.rowCount > 0;
+    console.log(`Delete result:`, result);
+    
+    // Check if the relation was actually deleted by checking if it still exists
+    const remainingRelation = await db
+      .select()
+      .from(layoutTags)
+      .where(and(eq(layoutTags.layoutId, layoutId), eq(layoutTags.tagId, tagId)));
+    
+    const success = remainingRelation.length === 0;
+    console.log(`Tag removal success: ${success}`);
+    return success;
   }
 
   async getLayoutTags(layoutId: number): Promise<Tag[]> {
