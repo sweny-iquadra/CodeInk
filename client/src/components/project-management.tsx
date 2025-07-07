@@ -203,39 +203,43 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
   const deleteTagMutation = useMutation({
     mutationFn: async (tagId: number) => {
       console.log("Deleting tag with ID:", tagId);
-      const response = await apiRequest("DELETE", `/api/tags/${tagId}`);
-      return response;
+      try {
+        const response = await apiRequest("DELETE", `/api/tags/${tagId}`);
+        return { success: true, tagId };
+      } catch (error: any) {
+        // Check if it's a 404 (already deleted) vs other errors
+        if (error.message && error.message.includes("Tag not found")) {
+          return { success: false, alreadyDeleted: true, tagId };
+        }
+        throw error;
+      }
     },
-    onSuccess: (_, tagId) => {
-      // Immediately update the cache to remove the deleted tag
+    onSuccess: (result) => {
+      // Update cache to remove the tag
       queryClient.setQueryData(["/api/tags"], (oldTags: TagType[] = []) => {
-        return oldTags.filter(tag => tag.id !== tagId);
+        return oldTags.filter(tag => tag.id !== result.tagId);
       });
-      // Also invalidate to ensure fresh data
-      queryClient.invalidateQueries({ queryKey: ["/api/tags"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
-      toast({ title: "Tag deleted successfully" });
-    },
-    onError: (error: any, tagId) => {
-      console.error("Tag deletion error:", error);
-      const errorMessage = error.message || "Failed to delete tag";
       
-      // If tag not found, it might already be deleted - remove from cache
-      if (errorMessage.includes("Tag not found")) {
-        queryClient.setQueryData(["/api/tags"], (oldTags: TagType[] = []) => {
-          return oldTags.filter(tag => tag.id !== tagId);
-        });
+      if (result.success) {
+        toast({ title: "Tag deleted successfully" });
+      } else if (result.alreadyDeleted) {
         toast({ 
           title: "Tag removed", 
           description: "This tag was already deleted."
         });
-      } else {
-        toast({ 
-          title: "Error deleting tag", 
-          description: errorMessage,
-          variant: "destructive" 
-        });
       }
+      
+      // Refresh data
+      queryClient.invalidateQueries({ queryKey: ["/api/tags"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
+    },
+    onError: (error: any) => {
+      console.error("Tag deletion error:", error);
+      toast({ 
+        title: "Error deleting tag", 
+        description: error.message || "Failed to delete tag",
+        variant: "destructive" 
+      });
     }
   });
 
