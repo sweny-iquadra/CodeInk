@@ -106,14 +106,10 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     queryKey: ["/api/layouts"]
   });
 
-  // Get unique layouts for dropdown (remove duplicates by ID)
+  // Get unique layouts for dropdown (remove duplicates by title, keep the latest one)
   const uniqueLayouts = layouts.filter((layout: GeneratedLayout, index: number, self: GeneratedLayout[]) => 
-    index === self.findIndex(l => l.id === layout.id)
+    index === self.findIndex(l => l.title === layout.title)
   );
-
-  // Debug logging to check for duplicates
-  console.log('Raw layouts:', layouts.map(l => ({ id: l.id, title: l.title })));
-  console.log('Unique layouts:', uniqueLayouts.map(l => ({ id: l.id, title: l.title })));
 
   const { data: searchResults = [] } = useQuery({
     queryKey: ["/api/layouts/search", searchQuery, selectedCategory, selectedTags, dateFrom, dateTo],
