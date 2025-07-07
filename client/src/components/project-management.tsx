@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription, DialogClose } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -64,6 +64,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     versionNumber: "",
     changesDescription: ""
   });
+  const [versionDialogOpen, setVersionDialogOpen] = useState(false);
 
   // Form states
   const [categoryForm, setCategoryForm] = useState<CreateCategoryRequest>({
@@ -180,6 +181,37 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
       toast({ title: "Error creating team", description: error.message, variant: "destructive" });
     }
   });
+
+  const createVersionMutation = useMutation({
+    mutationFn: (data: { parentId: number; versionNumber: string; changesDescription: string }) => 
+      apiRequest("POST", `/api/layouts/${data.parentId}/versions`, {
+        versionNumber: data.versionNumber,
+        changesDescription: data.changesDescription
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/layouts", selectedLayout, "versions"] });
+      setVersionForm({ versionNumber: "", changesDescription: "" });
+      setVersionDialogOpen(false);
+      toast({ title: "Version created successfully" });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Error creating version",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
+  });
+
+  const handleCreateVersion = () => {
+    if (selectedLayout && versionForm.versionNumber && versionForm.changesDescription) {
+      createVersionMutation.mutate({
+        parentId: selectedLayout,
+        versionNumber: versionForm.versionNumber,
+        changesDescription: versionForm.changesDescription
+      });
+    }
+  };
 
   return (
     <div className="h-full flex flex-col">
@@ -416,7 +448,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
 
             {selectedLayout && (
               <>
-                <Dialog>
+                <Dialog open={versionDialogOpen} onOpenChange={setVersionDialogOpen}>
                   <DialogTrigger asChild>
                     <Button className="w-full">
                       <GitBranch className="h-4 w-4 mr-2" />
@@ -426,6 +458,9 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>Create New Version</DialogTitle>
+                      <DialogDescription>
+                        Create a new version of this layout to track changes and maintain version history.
+                      </DialogDescription>
                     </DialogHeader>
                     <div className="space-y-4">
                       <div>
@@ -447,10 +482,11 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                         />
                       </div>
                       <Button 
-                        disabled={!versionForm.versionNumber || !versionForm.changesDescription}
+                        onClick={handleCreateVersion}
+                        disabled={!versionForm.versionNumber || !versionForm.changesDescription || createVersionMutation.isPending}
                         className="w-full"
                       >
-                        Create Version
+                        {createVersionMutation.isPending ? "Creating..." : "Create Version"}
                       </Button>
                     </div>
                   </DialogContent>

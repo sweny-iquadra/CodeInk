@@ -449,11 +449,22 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/layouts/:id/versions", authenticateToken, async (req, res) => {
     try {
       const parentId = parseInt(req.params.id);
-      const validatedData = insertLayoutSchema.parse(req.body);
+      const { versionNumber, changesDescription } = req.body;
+      
+      // Get the original layout to copy its content
+      const originalLayout = await storage.getLayout(parentId);
+      if (!originalLayout) {
+        return res.status(404).json({ message: "Original layout not found" });
+      }
       
       const version = await storage.createLayoutVersion(parentId, {
-        ...validatedData,
+        title: originalLayout.title,
+        description: originalLayout.description,
+        htmlCode: originalLayout.htmlCode,
+        versionNumber,
+        changesDescription,
         userId: req.user!.userId,
+        isPublic: originalLayout.isPublic
       });
       
       res.status(201).json(version);
