@@ -214,6 +214,7 @@ export default function Home() {
   };
 
   const handleSelectLayout = (layout: GeneratedLayout) => {
+    console.log("Selecting layout with ID:", layout.id);
     setCurrentCode(layout.generatedCode);
     setCurrentTitle(layout.title);
     setCurrentLayoutId(layout.id);
@@ -316,6 +317,7 @@ export default function Home() {
                   onLayoutImproved={handleLayoutImproved}
                   activeTab={outputTab}
                   onTabChange={setOutputTab}
+                  currentLayoutId={currentLayoutId}
                 />
               </div>
             </div>
@@ -335,6 +337,7 @@ export default function Home() {
                   onLayoutImproved={handleLayoutImproved}
                   activeTab={outputTab}
                   onTabChange={setOutputTab}
+                  currentLayoutId={currentLayoutId}
                 />
               </div>
             </div>
@@ -357,6 +360,7 @@ export default function Home() {
                   onLayoutImproved={handleLayoutImproved}
                   activeTab={outputTab}
                   onTabChange={setOutputTab}
+                  currentLayoutId={selectedLayoutForManagement?.id || currentLayoutId}
                 />
               </div>
             </div>

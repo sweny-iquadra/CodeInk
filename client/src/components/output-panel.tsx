@@ -30,9 +30,10 @@ interface OutputPanelProps {
   onLayoutImproved?: (improvedLayout: { html: string; title: string; description: string }) => void;
   activeTab?: string;
   onTabChange?: (tab: string) => void;
+  currentLayoutId?: number;
 }
 
-export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutImproved, activeTab, onTabChange }: OutputPanelProps) {
+export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutImproved, activeTab, onTabChange, currentLayoutId }: OutputPanelProps) {
   const [activeView, setActiveView] = useState("code");
   
   // Use external activeTab if provided, otherwise use internal state
