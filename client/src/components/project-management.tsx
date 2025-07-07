@@ -501,7 +501,8 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-2">
-                      {layoutVersions.length > 0 ? (
+                      {console.log('layoutVersions:', layoutVersions, 'selectedLayout:', selectedLayout)}
+                      {layoutVersions && layoutVersions.length > 0 ? (
                         layoutVersions.map((version: GeneratedLayout) => (
                           <div
                             key={version.id}
@@ -509,8 +510,8 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                             onClick={() => onSelectLayout(version)}
                           >
                             <div>
-                              <div className="font-medium text-sm">{version.versionNumber}</div>
-                              <div className="text-xs text-muted-foreground">{version.changesDescription}</div>
+                              <div className="font-medium text-sm">{version.versionNumber || 'No version number'}</div>
+                              <div className="text-xs text-muted-foreground">{version.changesDescription || 'No description'}</div>
                             </div>
                             <div className="text-xs text-muted-foreground">
                               {new Date(version.createdAt).toLocaleDateString()}
@@ -520,6 +521,8 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                       ) : (
                         <div className="text-sm text-muted-foreground text-center py-4">
                           No versions created yet. Create your first version above.
+                          <br />
+                          <small>Selected Layout: {selectedLayout} | Versions Count: {layoutVersions?.length || 0}</small>
                         </div>
                       )}
                     </div>
