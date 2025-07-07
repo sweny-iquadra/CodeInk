@@ -491,6 +491,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/layouts/:id/history", authenticateToken, async (req, res) => {
     try {
       const layoutId = parseInt(req.params.id);
+      if (isNaN(layoutId)) {
+        return res.status(400).json({ message: "Invalid layout ID" });
+      }
+      
       const history = await storage.getLayoutVersionHistory(layoutId);
       res.json(history);
     } catch (error: unknown) {
