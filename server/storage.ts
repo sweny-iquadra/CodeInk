@@ -323,9 +323,24 @@ export class DatabaseStorage implements IStorage {
   }
 
   async removeTagFromLayout(layoutId: number, tagId: number): Promise<boolean> {
+    // First, check if the tag relationship exists
+    const existingRelation = await db
+      .select()
+      .from(layoutTags)
+      .where(and(eq(layoutTags.layoutId, layoutId), eq(layoutTags.tagId, tagId)));
+    
+    console.log(`Checking for layoutTag relation: layoutId=${layoutId}, tagId=${tagId}`, existingRelation);
+    
+    if (existingRelation.length === 0) {
+      console.log("No layoutTag relation found to delete");
+      return false;
+    }
+    
     const result = await db
       .delete(layoutTags)
       .where(and(eq(layoutTags.layoutId, layoutId), eq(layoutTags.tagId, tagId)));
+    
+    console.log(`Delete result: ${result.rowCount} rows affected`);
     return result.rowCount > 0;
   }
 
