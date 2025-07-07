@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -56,6 +57,13 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [selectedLayout, setSelectedLayout] = useState<number | null>(null);
+  const [versionForm, setVersionForm] = useState({
+    versionNumber: "",
+    changesDescription: ""
+  });
 
   // Form states
   const [categoryForm, setCategoryForm] = useState<CreateCategoryRequest>({
@@ -65,7 +73,8 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
   });
   const [tagForm, setTagForm] = useState<CreateTagRequest>({
     name: "",
-    color: "#6b7280"
+    color: "#6b7280",
+    description: ""
   });
   const [teamForm, setTeamForm] = useState<CreateTeamRequest>({
     name: "",
@@ -82,20 +91,29 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
   });
 
   const { data: teams = [] } = useQuery<Team[]>({
-    queryKey: ["/api/teams"]
+    queryKey: ["/api/teams"],
+    retry: 3,
+    staleTime: 5000
   });
 
   const { data: sharedLayouts = [] } = useQuery<SharedLayout[]>({
     queryKey: ["/api/layouts/shared"]
   });
 
+  // Add layouts query for version control
+  const { data: layouts = [] } = useQuery<GeneratedLayout[]>({
+    queryKey: ["/api/layouts"]
+  });
+
   const { data: searchResults = [] } = useQuery({
-    queryKey: ["/api/layouts/search", searchQuery, selectedCategory, selectedTags],
+    queryKey: ["/api/layouts/search", searchQuery, selectedCategory, selectedTags, dateFrom, dateTo],
     queryFn: () => {
       const params = new URLSearchParams();
       if (searchQuery) params.append("q", searchQuery);
       if (selectedCategory) params.append("categoryId", selectedCategory.toString());
       if (selectedTags.length > 0) params.append("tagIds", selectedTags.join(","));
+      if (dateFrom) params.append("dateFrom", dateFrom);
+      if (dateTo) params.append("dateTo", dateTo);
       
       return apiRequest("GET", `/api/layouts/search?${params.toString()}`);
     },
@@ -298,6 +316,15 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                         onChange={(e) => setTagForm(prev => ({ ...prev, color: e.target.value }))}
                       />
                     </div>
+                    <div>
+                      <Label htmlFor="tag-description">Description</Label>
+                      <Textarea
+                        id="tag-description"
+                        value={tagForm.description}
+                        onChange={(e) => setTagForm(prev => ({ ...prev, description: e.target.value }))}
+                        placeholder="Optional description"
+                      />
+                    </div>
                     <Button 
                       onClick={() => createTagMutation.mutate(tagForm)}
                       disabled={!tagForm.name || createTagMutation.isPending}
@@ -367,39 +394,97 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
         </TabsContent>
 
         <TabsContent value="versions" className="p-4">
-          {currentLayout ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <GitBranch className="h-4 w-4" />
-                  Version History
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {layoutVersions.map((version: GeneratedLayout) => (
-                    <div
-                      key={version.id}
-                      className="flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-accent"
-                      onClick={() => onSelectLayout(version)}
-                    >
+          <div className="space-y-4">
+            <div>
+              <Label className="text-sm">Select Layout for Version Control</Label>
+              <Select 
+                value={selectedLayout?.toString() || ""} 
+                onValueChange={(value) => setSelectedLayout(value ? parseInt(value) : null)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Choose a layout..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {layouts.map((layout: GeneratedLayout) => (
+                    <SelectItem key={layout.id} value={layout.id.toString()}>
+                      {layout.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {selectedLayout && (
+              <>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button className="w-full">
+                      <GitBranch className="h-4 w-4 mr-2" />
+                      Create Version
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Create New Version</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
                       <div>
-                        <div className="font-medium text-sm">{version.versionNumber}</div>
-                        <div className="text-xs text-muted-foreground">{version.changesDescription}</div>
+                        <Label htmlFor="version-number">Version Number</Label>
+                        <Input
+                          id="version-number"
+                          value={versionForm.versionNumber}
+                          onChange={(e) => setVersionForm(prev => ({ ...prev, versionNumber: e.target.value }))}
+                          placeholder="e.g., v1.1, v2.0"
+                        />
                       </div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(version.createdAt).toLocaleDateString()}
+                      <div>
+                        <Label htmlFor="changes-description">Changes Description</Label>
+                        <Textarea
+                          id="changes-description"
+                          value={versionForm.changesDescription}
+                          onChange={(e) => setVersionForm(prev => ({ ...prev, changesDescription: e.target.value }))}
+                          placeholder="Describe what changed in this version..."
+                        />
+                      </div>
+                      <Button 
+                        disabled={!versionForm.versionNumber || !versionForm.changesDescription}
+                        className="w-full"
+                      >
+                        Create Version
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-sm flex items-center gap-2">
+                      <History className="h-4 w-4" />
+                      Version History
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <div className="text-sm text-muted-foreground text-center py-4">
+                        No versions created yet. Create your first version above.
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="text-center py-8 text-muted-foreground">
-              Select a layout to view its version history
-            </div>
-          )}
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
+            {!selectedLayout && (
+              <Card>
+                <CardContent className="p-6 text-center">
+                  <GitBranch className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    Select a layout above to manage its versions
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </TabsContent>
 
         <TabsContent value="collaborate" className="p-4">
@@ -511,21 +596,72 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
               </div>
             </div>
 
-            <div className="flex gap-2">
-              <Select value={selectedCategory?.toString() || "all"} onValueChange={(value) => setSelectedCategory(value === "all" ? null : parseInt(value))}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Filter by category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  {categories.map((category: Category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div>
+                <Label className="text-xs">Category</Label>
+                <Select value={selectedCategory?.toString() || "all"} onValueChange={(value) => setSelectedCategory(value === "all" ? null : parseInt(value))}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="All categories" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All categories</SelectItem>
+                    {categories.map((category: Category) => (
+                      <SelectItem key={category.id} value={category.id.toString()}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
+              <div>
+                <Label className="text-xs">Tags</Label>
+                <div className="space-y-2">
+                  <div className="max-h-32 overflow-y-auto border rounded p-2">
+                    {tags.map((tag: TagType) => (
+                      <div key={tag.id} className="flex items-center space-x-2 py-1">
+                        <Checkbox
+                          id={`tag-${tag.id}`}
+                          checked={selectedTags.includes(tag.id)}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              setSelectedTags([...selectedTags, tag.id]);
+                            } else {
+                              setSelectedTags(selectedTags.filter(id => id !== tag.id));
+                            }
+                          }}
+                        />
+                        <Label htmlFor={`tag-${tag.id}`} className="text-xs">
+                          <Badge style={{ backgroundColor: tag.color }} className="text-white">
+                            {tag.name}
+                          </Badge>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs">Date From</Label>
+                <Input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(e) => setDateFrom(e.target.value)}
+                />
+              </div>
+
+              <div>
+                <Label className="text-xs">Date To</Label>
+                <Input
+                  type="date"
+                  value={dateTo}
+                  onChange={(e) => setDateTo(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-2">
               <Button 
                 variant="outline" 
                 size="sm"
@@ -533,9 +669,12 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                   setSearchQuery("");
                   setSelectedCategory(null);
                   setSelectedTags([]);
+                  setDateFrom("");
+                  setDateTo("");
                 }}
               >
-                Clear
+                <Filter className="h-4 w-4 mr-2" />
+                Clear Filters
               </Button>
             </div>
 

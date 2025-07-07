@@ -331,13 +331,27 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUserTeams(userId: number): Promise<Team[]> {
-    const userTeams = await db
+    // Get teams where user is the creator OR is a member
+    const createdTeams = await db
       .select()
       .from(teams)
-      .innerJoin(teamMembers, eq(teams.id, teamMembers.teamId))
+      .where(eq(teams.createdBy, userId))
+      .orderBy(teams.name);
+    
+    const memberTeams = await db
+      .select({ teams: teams })
+      .from(teamMembers)
+      .innerJoin(teams, eq(teamMembers.teamId, teams.id))
       .where(eq(teamMembers.userId, userId))
       .orderBy(teams.name);
-    return userTeams.map(result => result.teams);
+    
+    // Combine and deduplicate
+    const allTeams = [...createdTeams, ...memberTeams.map(result => result.teams)];
+    const uniqueTeams = allTeams.filter((team, index, self) => 
+      index === self.findIndex((t) => t.id === team.id)
+    );
+    
+    return uniqueTeams;
   }
 
   async addTeamMember(insertTeamMember: InsertTeamMember): Promise<TeamMember> {
