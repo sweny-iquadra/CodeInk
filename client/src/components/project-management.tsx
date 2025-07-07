@@ -126,12 +126,15 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     return layouts.filter((layout: GeneratedLayout) => layout.categoryId === categoryId).length;
   };
 
-  // Query for current layout tags
+  // Query for current layout tags - ensure it's always an array
   const { data: currentLayoutTags = [] } = useQuery<TagType[]>({
     queryKey: ["/api/layouts", currentLayout?.id, "tags"],
     queryFn: () => apiRequest("GET", `/api/layouts/${currentLayout?.id}/tags`),
-    enabled: !!(currentLayout?.id && currentLayout.id > 0)
+    enabled: !!(currentLayout?.id && currentLayout.id > 0 && !isNaN(currentLayout.id))
   });
+
+  // Ensure currentLayoutTags is always an array for safety
+  const safeCurrentLayoutTags = Array.isArray(currentLayoutTags) ? currentLayoutTags : [];
 
   const { data: searchResults = [] } = useQuery({
     queryKey: ["/api/layouts/search", searchQuery, selectedCategory, selectedTags, dateFrom, dateTo],
