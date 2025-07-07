@@ -576,12 +576,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/layouts/shared", authenticateToken, async (req, res) => {
     try {
-      console.log("Debug - req.user:", req.user);
-      console.log("Debug - req.user.userId:", req.user?.userId);
-      console.log("Debug - typeof req.user.userId:", typeof req.user?.userId);
-      
-      if (!req.user?.userId || isNaN(req.user.userId)) {
-        console.log("Debug - Invalid user ID detected");
+      if (!req.user?.userId || typeof req.user.userId !== 'number') {
         return res.status(400).json({ message: "Invalid user ID" });
       }
       
@@ -590,6 +585,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: unknown) {
       console.error("Error fetching shared layouts:", error);
       res.status(500).json({ message: "Failed to fetch shared layouts" });
+    }
+  });
+
+  // Get layouts by category
+  app.get("/api/categories/:categoryId/layouts", authenticateToken, async (req, res) => {
+    try {
+      const categoryId = parseInt(req.params.categoryId);
+      if (isNaN(categoryId)) {
+        return res.status(400).json({ message: "Invalid category ID" });
+      }
+      
+      if (!req.user?.userId || typeof req.user.userId !== 'number') {
+        return res.status(400).json({ message: "Invalid user ID" });
+      }
+      
+      const layouts = await storage.getLayoutsByCategory(categoryId, req.user.userId);
+      res.json(layouts);
+    } catch (error: unknown) {
+      console.error("Error fetching layouts by category:", error);
+      res.status(500).json({ message: "Failed to fetch layouts by category" });
     }
   });
 
@@ -641,21 +656,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Search and filtering routes
   app.get("/api/layouts/search", authenticateToken, async (req, res) => {
     try {
-      console.log("Search Debug - req.user:", req.user);
-      console.log("Search Debug - req.user.userId:", req.user?.userId);
-      console.log("Search Debug - typeof req.user.userId:", typeof req.user?.userId);
-      
       const { q: query, categoryId, tagIds, isPublic, dateFrom, dateTo } = req.query;
       
       const filters: any = {};
-      if (categoryId) filters.categoryId = parseInt(categoryId as string);
-      if (tagIds) filters.tagIds = (tagIds as string).split(',').map(id => parseInt(id));
+      if (categoryId && categoryId !== "undefined" && categoryId !== "null") {
+        const parsedCategoryId = parseInt(categoryId as string);
+        if (!isNaN(parsedCategoryId)) {
+          filters.categoryId = parsedCategoryId;
+        }
+      }
+      if (tagIds && tagIds !== "undefined" && tagIds !== "null") {
+        const tagIdArray = (tagIds as string).split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
+        if (tagIdArray.length > 0) {
+          filters.tagIds = tagIdArray;
+        }
+      }
       if (isPublic !== undefined) filters.isPublic = isPublic === 'true';
-      if (dateFrom) filters.dateFrom = new Date(dateFrom as string);
-      if (dateTo) filters.dateTo = new Date(dateTo as string);
+      if (dateFrom && dateFrom !== "undefined") filters.dateFrom = new Date(dateFrom as string);
+      if (dateTo && dateTo !== "undefined") filters.dateTo = new Date(dateTo as string);
       
       if (!req.user?.userId || isNaN(req.user.userId)) {
-        console.log("Search Debug - Invalid user ID detected");
         return res.status(400).json({ message: "Invalid user ID" });
       }
       

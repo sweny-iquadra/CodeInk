@@ -27,7 +27,9 @@ import {
   EyeOff,
   GitBranch,
   Clock,
-  Filter
+  Filter,
+  X,
+  ChevronRight
 } from "lucide-react";
 import type { 
   Category, 
@@ -65,6 +67,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
     changesDescription: ""
   });
   const [versionDialogOpen, setVersionDialogOpen] = useState(false);
+  const [viewingCategoryId, setViewingCategoryId] = useState<number | null>(null);
 
   // Form states
   const [categoryForm, setCategoryForm] = useState<CreateCategoryRequest>({
@@ -110,6 +113,18 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
   const uniqueLayouts = layouts.filter((layout: GeneratedLayout, index: number, self: GeneratedLayout[]) => 
     index === self.findIndex(l => l.title === layout.title)
   );
+
+  // Query for layouts by category
+  const { data: categoryLayouts = [] } = useQuery<GeneratedLayout[]>({
+    queryKey: ["/api/categories", viewingCategoryId, "layouts"],
+    queryFn: () => apiRequest("GET", `/api/categories/${viewingCategoryId}/layouts`),
+    enabled: !!viewingCategoryId
+  });
+
+  // Calculate layout counts per category
+  const getCategoryLayoutCount = (categoryId: number) => {
+    return layouts.filter((layout: GeneratedLayout) => layout.categoryId === categoryId).length;
+  };
 
   const { data: searchResults = [] } = useQuery({
     queryKey: ["/api/layouts/search", searchQuery, selectedCategory, selectedTags, dateFrom, dateTo],
@@ -310,7 +325,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                   <div
                     key={category.id}
                     className="flex items-center justify-between p-2 rounded border cursor-pointer hover:bg-accent"
-                    onClick={() => setSelectedCategory(category.id)}
+                    onClick={() => setViewingCategoryId(category.id)}
                   >
                     <div className="flex items-center gap-2">
                       <div 
@@ -320,14 +335,67 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                       <span className="text-sm">{category.name}</span>
                     </div>
                     <Badge variant="secondary" className="text-xs">
-                      {/* Count would come from a separate query */}
-                      0
+                      {getCategoryLayoutCount(category.id)}
                     </Badge>
                   </div>
                 ))}
               </div>
             </CardContent>
           </Card>
+
+          {/* Category Layouts View */}
+          {viewingCategoryId && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Eye className="h-4 w-4" />
+                  Layouts in {categories.find(c => c.id === viewingCategoryId)?.name}
+                </CardTitle>
+                <Button 
+                  size="sm" 
+                  variant="ghost" 
+                  onClick={() => setViewingCategoryId(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  {categoryLayouts.length === 0 ? (
+                    <div className="text-center py-4 text-muted-foreground text-sm">
+                      No layouts in this category yet
+                    </div>
+                  ) : (
+                    categoryLayouts.map((layout: GeneratedLayout) => (
+                      <div
+                        key={layout.id}
+                        className="flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-accent"
+                        onClick={() => onSelectLayout(layout)}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h4 className="text-sm font-medium truncate">{layout.title}</h4>
+                            {layout.isPublic ? (
+                              <Eye className="w-3 h-3 text-green-500" />
+                            ) : (
+                              <EyeOff className="w-3 h-3 text-gray-500" />
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {layout.description}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(layout.createdAt).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                    ))
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Tags Section */}
           <Card>

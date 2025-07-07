@@ -253,11 +253,31 @@ export class DatabaseStorage implements IStorage {
 
   async getLayoutsByCategory(categoryId: number, userId: number): Promise<GeneratedLayout[]> {
     const layouts = await db
-      .select()
+      .select({
+        id: generatedLayouts.id,
+        title: generatedLayouts.title,
+        description: generatedLayouts.description,
+        inputMethod: generatedLayouts.inputMethod,
+        generatedCode: generatedLayouts.generatedCode,
+        additionalContext: generatedLayouts.additionalContext,
+        userId: generatedLayouts.userId,
+        isPublic: generatedLayouts.isPublic,
+        categoryId: generatedLayouts.categoryId,
+        parentLayoutId: generatedLayouts.parentLayoutId,
+        versionNumber: generatedLayouts.versionNumber,
+        changesDescription: generatedLayouts.changesDescription,
+        createdAt: generatedLayouts.createdAt,
+        category: {
+          id: categories.id,
+          name: categories.name,
+          color: categories.color,
+        }
+      })
       .from(generatedLayouts)
+      .leftJoin(categories, eq(generatedLayouts.categoryId, categories.id))
       .where(and(eq(generatedLayouts.categoryId, categoryId), eq(generatedLayouts.userId, userId)))
       .orderBy(desc(generatedLayouts.createdAt));
-    return layouts;
+    return layouts as any;
   }
 
   // Tag management methods
@@ -514,28 +534,48 @@ export class DatabaseStorage implements IStorage {
     }
 
     if (filters?.dateFrom) {
-      whereClause = and(whereClause, eq(generatedLayouts.createdAt, filters.dateFrom));
+      whereClause = and(whereClause, gte(generatedLayouts.createdAt, filters.dateFrom));
     }
 
     if (filters?.dateTo) {
-      whereClause = and(whereClause, eq(generatedLayouts.createdAt, filters.dateTo));
+      whereClause = and(whereClause, lte(generatedLayouts.createdAt, filters.dateTo));
+    }
+
+    // If query is provided, add text search
+    if (query && query.trim()) {
+      whereClause = and(whereClause, or(
+        like(generatedLayouts.title, `%${query}%`),
+        like(generatedLayouts.description, `%${query}%`)
+      ));
     }
 
     const layouts = await db
-      .select()
+      .select({
+        id: generatedLayouts.id,
+        title: generatedLayouts.title,
+        description: generatedLayouts.description,
+        inputMethod: generatedLayouts.inputMethod,
+        generatedCode: generatedLayouts.generatedCode,
+        additionalContext: generatedLayouts.additionalContext,
+        userId: generatedLayouts.userId,
+        isPublic: generatedLayouts.isPublic,
+        categoryId: generatedLayouts.categoryId,
+        parentLayoutId: generatedLayouts.parentLayoutId,
+        versionNumber: generatedLayouts.versionNumber,
+        changesDescription: generatedLayouts.changesDescription,
+        createdAt: generatedLayouts.createdAt,
+        category: {
+          id: categories.id,
+          name: categories.name,
+          color: categories.color,
+        }
+      })
       .from(generatedLayouts)
+      .leftJoin(categories, eq(generatedLayouts.categoryId, categories.id))
       .where(whereClause)
       .orderBy(desc(generatedLayouts.createdAt));
 
-    // Simple text search in title and description
-    if (query) {
-      return layouts.filter(layout => 
-        layout.title.toLowerCase().includes(query.toLowerCase()) ||
-        (layout.description && layout.description.toLowerCase().includes(query.toLowerCase()))
-      );
-    }
-
-    return layouts;
+    return layouts as any;
   }
 }
 
