@@ -461,6 +461,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         title: originalLayout.title,
         description: originalLayout.description,
         htmlCode: originalLayout.htmlCode,
+        inputMethod: originalLayout.inputMethod || 'text',
+        framework: originalLayout.framework || 'tailwind',
         versionNumber,
         changesDescription,
         userId: req.user!.userId,
