@@ -785,23 +785,66 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
   const { data: searchResults = [], isLoading: isSearching, error: searchError } = useQuery<GeneratedLayout[]>({
     queryKey: ["/api/layouts/search", debouncedSearchQuery, selectedCategory, selectedTags, dateFrom, dateTo],
     queryFn: async () => {
-      const params = new URLSearchParams();
-      if (debouncedSearchQuery) params.append("q", debouncedSearchQuery);
-      if (selectedCategory && selectedCategory !== null) params.append("categoryId", selectedCategory.toString());
-      if (selectedTags.length > 0) params.append("tagIds", selectedTags.join(","));
-      if (dateFrom) params.append("dateFrom", dateFrom);
-      if (dateTo) params.append("dateTo", dateTo);
-      
-      const response = await apiRequest("GET", `/api/layouts/search?${params.toString()}`);
-      return response.json();
+      try {
+        const params = new URLSearchParams();
+        if (debouncedSearchQuery) params.append("q", debouncedSearchQuery);
+        if (selectedCategory && selectedCategory !== null) params.append("categoryId", selectedCategory.toString());
+        if (selectedTags.length > 0) params.append("tagIds", selectedTags.join(","));
+        if (dateFrom) params.append("dateFrom", dateFrom);
+        if (dateTo) params.append("dateTo", dateTo);
+        
+        const response = await apiRequest("GET", `/api/layouts/search?${params.toString()}`);
+        
+        if (!response.ok) {
+          console.error("Search failed:", response.status, response.statusText);
+          return [];
+        }
+        
+        return response.json();
+      } catch (error) {
+        console.error("Search error:", error);
+        return [];
+      }
     },
     enabled: hasFilters, // Only search when there are filters
     staleTime: 300, // Cache for 300ms to avoid excessive requests
     retry: false, // Don't retry on error
   });
 
-  // Fallback to user layouts when no search filters are applied
-  const displayResults = hasFilters ? searchResults : layouts;
+  // Client-side filtering as fallback while server search is being fixed
+  const clientSideFilteredResults = useMemo(() => {
+    let filtered = layouts;
+    
+    // Filter by search query
+    if (debouncedSearchQuery) {
+      const query = debouncedSearchQuery.toLowerCase();
+      filtered = filtered.filter(layout => 
+        layout.title.toLowerCase().includes(query) || 
+        layout.description.toLowerCase().includes(query)
+      );
+    }
+    
+    // Filter by category
+    if (selectedCategory) {
+      filtered = filtered.filter(layout => layout.categoryId === selectedCategory);
+    }
+    
+    // Filter by date range
+    if (dateFrom) {
+      const fromDate = new Date(dateFrom);
+      filtered = filtered.filter(layout => new Date(layout.createdAt) >= fromDate);
+    }
+    
+    if (dateTo) {
+      const toDate = new Date(dateTo);
+      filtered = filtered.filter(layout => new Date(layout.createdAt) <= toDate);
+    }
+    
+    return filtered;
+  }, [layouts, debouncedSearchQuery, selectedCategory, selectedTags, dateFrom, dateTo]);
+  
+  // Use client-side filtering for now, server search when it's working
+  const displayResults = clientSideFilteredResults;
 
 
 
