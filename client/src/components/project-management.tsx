@@ -842,7 +842,9 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
     queryKey: ["/api/layouts", selectedLayout, "history"],
     queryFn: async () => {
       const response = await apiRequest("GET", `/api/layouts/${selectedLayout}/history`);
-      return await response.json();
+      const data = await response.json();
+      console.log("Version history data for layout", selectedLayout, ":", data);
+      return data;
     },
     enabled: !!selectedLayout
   });
