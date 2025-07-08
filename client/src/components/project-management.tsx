@@ -1415,6 +1415,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                           onClick={() => {
                             console.log("Version clicked:", version.id, "versionNumber:", version.versionNumber);
                             console.log("Version generatedCode preview:", version.generatedCode?.substring(0, 200));
+                            console.log("Full version object:", version);
                             onSelectLayout(version);
                           }}
                         >
