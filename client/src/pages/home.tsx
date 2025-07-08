@@ -36,7 +36,7 @@ export default function Home() {
 
   const generateFromTextMutation = useMutation({
 
-    mutationFn: async ({ description, additionalContext, isPublic, categoryId }: { description: string; additionalContext?: string; isPublic?: boolean; categoryId?: number }) => {
+    mutationFn: async ({ description, additionalContext, isPublic, categoryId, layoutName }: { description: string; additionalContext?: string; isPublic?: boolean; categoryId?: number; layoutName: string }) => {
 
       const controller = new AbortController();
       setAbortController(controller);
@@ -46,6 +46,7 @@ export default function Home() {
         additionalContext,
         isPublic: isPublic || false,
         categoryId,
+        layoutName,
       }, controller.signal);
       return response.json();
     },
@@ -81,7 +82,7 @@ export default function Home() {
 
   const generateFromImageMutation = useMutation({
 
-    mutationFn: async ({ file, additionalContext, isPublic, categoryId }: { file: File; additionalContext?: string; isPublic?: boolean; categoryId?: number }) => {
+    mutationFn: async ({ file, additionalContext, isPublic, categoryId, layoutName }: { file: File; additionalContext?: string; isPublic?: boolean; categoryId?: number; layoutName: string }) => {
       const controller = new AbortController();
       setAbortController(controller);
       
@@ -94,8 +95,8 @@ export default function Home() {
       formData.append("isPublic", String(isPublic || false));
       if (categoryId) {
         formData.append("categoryId", String(categoryId));
-
       }
+      formData.append("layoutName", layoutName);
 
       // Use authenticated fetch with JWT token for file uploads
       const accessToken = localStorage.getItem("auth_token");
@@ -200,22 +201,23 @@ export default function Home() {
     file?: File;
     isPublic?: boolean;
     categoryId?: number;
-
+    layoutName?: string;
   }) => {
-    if (data.type === 'text' && data.description) {
+    if (data.type === 'text' && data.description && data.layoutName) {
       generateFromTextMutation.mutate({
         description: data.description,
         additionalContext: data.additionalContext,
         isPublic: data.isPublic,
         categoryId: data.categoryId,
+        layoutName: data.layoutName,
       });
-    } else if (data.type === 'image' && data.file) {
+    } else if (data.type === 'image' && data.file && data.layoutName) {
       generateFromImageMutation.mutate({
         file: data.file,
         additionalContext: data.additionalContext,
         isPublic: data.isPublic,
         categoryId: data.categoryId,
-
+        layoutName: data.layoutName,
       });
     }
   };

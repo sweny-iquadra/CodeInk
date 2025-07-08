@@ -47,6 +47,7 @@ export interface IStorage {
   getPublicLayouts(limit?: number): Promise<GeneratedLayout[]>;
   getLayout(id: number): Promise<GeneratedLayout | undefined>;
   updateLayoutVisibility(id: number, isPublic: boolean, userId: number): Promise<GeneratedLayout | undefined>;
+  checkLayoutNameExists(userId: number, name: string): Promise<boolean>;
   
   // Category management
   createCategory(category: InsertCategory): Promise<Category>;
@@ -226,6 +227,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(generatedLayouts.id, id))
       .returning();
     return layout || undefined;
+  }
+
+  async checkLayoutNameExists(userId: number, name: string): Promise<boolean> {
+    const [layout] = await db
+      .select({ id: generatedLayouts.id })
+      .from(generatedLayouts)
+      .where(and(
+        eq(generatedLayouts.userId, userId),
+        eq(generatedLayouts.title, name)
+      ))
+      .limit(1);
+    return !!layout;
   }
 
   // Category management methods

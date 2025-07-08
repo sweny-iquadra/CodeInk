@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent } from "@/components/ui/card";
@@ -16,7 +17,7 @@ import { apiRequest } from "@/lib/queryClient";
 import type { Category } from "@shared/schema";
 
 interface InputPanelProps {
-  onGenerate: (data: { type: 'text' | 'image'; description?: string; additionalContext?: string; file?: File; isPublic?: boolean; categoryId?: number }) => void;
+  onGenerate: (data: { type: 'text' | 'image'; description?: string; additionalContext?: string; file?: File; isPublic?: boolean; categoryId?: number; layoutName?: string }) => void;
   isLoading: boolean;
 }
 
@@ -28,6 +29,7 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
   const [dragActive, setDragActive] = useState(false);
   const [isPublic, setIsPublic] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
+  const [layoutName, setLayoutName] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -92,6 +94,15 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
   };
 
   const handleGenerate = () => {
+    if (!layoutName.trim()) {
+      toast({
+        variant: "destructive",
+        title: "Layout name required",
+        description: "Please enter a name for your layout.",
+      });
+      return;
+    }
+
     if (activeTab === "upload") {
       if (!selectedFile) {
         toast({
@@ -107,6 +118,7 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
         additionalContext,
         isPublic,
         categoryId: selectedCategory,
+        layoutName: layoutName.trim(),
       });
     } else {
       if (!description.trim()) {
@@ -123,7 +135,7 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
         additionalContext,
         isPublic,
         categoryId: selectedCategory,
-
+        layoutName: layoutName.trim(),
       });
     }
   };
@@ -226,6 +238,20 @@ export function InputPanel({ onGenerate, isLoading }: InputPanelProps) {
             />
           </div>
 
+          {/* Layout Name */}
+          <div className="mt-6">
+            <Label htmlFor="layout-name" className="text-base font-semibold text-foreground">
+              Layout Name <span className="text-red-500">*</span>
+            </Label>
+            <Input
+              id="layout-name"
+              value={layoutName}
+              onChange={(e) => setLayoutName(e.target.value)}
+              placeholder="Enter a unique name for your layout"
+              className="mt-3 border-2 rounded-xl text-base focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+              required
+            />
+          </div>
 
           {/* Category Selection */}
           <div className="mt-6">

@@ -101,11 +101,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate code from text description (protected)
   app.post("/api/generate-from-text", authenticateToken, async (req, res) => {
     try {
-      const { description, additionalContext, isPublic, categoryId } = req.body;
-
+      const { description, additionalContext, isPublic, categoryId, layoutName } = req.body;
 
       if (!description) {
         return res.status(400).json({ message: "Description is required" });
+      }
+
+      if (!layoutName) {
+        return res.status(400).json({ message: "Layout name is required" });
+      }
+
+      // Check for duplicate layout name
+      const nameExists = await storage.checkLayoutNameExists(req.user!.userId, layoutName);
+      if (nameExists) {
+        return res.status(400).json({ message: "A layout with this name already exists. Please choose a different name." });
       }
 
       const result = await generateCodeFromDescription({
@@ -113,9 +122,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         additionalContext,
       });
 
-      // Save to storage with user association
+      // Save to storage with user association and custom name
       const layout = await storage.createLayout({
-        title: result.title,
+        title: layoutName, // Use the custom layout name instead of AI-generated title
         description: result.description,
         inputMethod: "describe",
         generatedCode: result.html,
@@ -127,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         changesDescription: "Initial version created from text description"
       });
 
-      res.json({ ...result, id: layout.id });
+      res.json({ ...result, id: layout.id, title: layoutName });
     } catch (error: unknown) {
       console.error("Error generating code from text:", error);
       res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
@@ -141,15 +150,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Image file is required" });
       }
 
-      const { additionalContext, isPublic, categoryId } = req.body;
+      const { additionalContext, isPublic, categoryId, layoutName } = req.body;
+
+      if (!layoutName) {
+        return res.status(400).json({ message: "Layout name is required" });
+      }
+
+      // Check for duplicate layout name
+      const nameExists = await storage.checkLayoutNameExists(req.user!.userId, layoutName);
+      if (nameExists) {
+        return res.status(400).json({ message: "A layout with this name already exists. Please choose a different name." });
+      }
 
       const imageBase64 = req.file.buffer.toString("base64");
 
       const result = await analyzeImageAndGenerateCode(imageBase64, additionalContext);
 
-      // Save to storage with user association
+      // Save to storage with user association and custom name
       const layout = await storage.createLayout({
-        title: result.title,
+        title: layoutName, // Use the custom layout name instead of AI-generated title
         description: result.description,
         inputMethod: "upload",
         generatedCode: result.html,
@@ -161,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         changesDescription: "Initial version created from uploaded image"
       });
 
-      res.json({ ...result, id: layout.id });
+      res.json({ ...result, id: layout.id, title: layoutName });
     } catch (error: unknown) {
       console.error("Error generating code from image:", error);
       res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
