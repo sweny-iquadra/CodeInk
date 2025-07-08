@@ -1498,8 +1498,8 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
-                                  <h3 className="font-semibold text-base" style={{color: 'black !important', minWidth: '120px'}}>
-                                    {String(team.name || 'No Name')}
+                                  <h3 className="font-medium text-sm text-card-foreground truncate">
+                                    {team.name}
                                   </h3>
                                   <Badge variant="outline" className="text-xs shrink-0">Admin</Badge>
                                 </div>
