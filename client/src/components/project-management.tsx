@@ -517,14 +517,8 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
   const { data: acceptedInvitations = [] } = useQuery({
     queryKey: ["/api/accepted-invitations"],
     queryFn: async () => {
-      // Get all accepted invitations for the current user
-      const invitationsResponse = await apiRequest("GET", "/api/invitations");
-      const allInvitations = await invitationsResponse.json();
-      
-      // Filter for accepted invitations with layout assignments
-      return allInvitations.filter(invitation => 
-        invitation.status === 'accepted' && invitation.layoutId
-      );
+      const response = await apiRequest("GET", "/api/accepted-invitations");
+      return response.json();
     }
   });
 
@@ -535,7 +529,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
     teamName: invitation.teamName,
     teamId: invitation.teamId,
     invitationId: invitation.id
-  }));
+  })).filter(item => item.id); // Only include invitations with valid layoutId
 
   // Query for actual layout data for shared layouts
   const { data: teamSharedLayoutsData = [] } = useQuery({
@@ -568,6 +562,10 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
   const { data: layouts = [] } = useQuery<GeneratedLayout[]>({
     queryKey: ["/api/layouts"]
   });
+
+
+
+
 
   // Get base layouts for dropdown - include own layouts and team shared layouts
   const uniqueLayouts = [...layouts, ...teamSharedLayouts, ...teamSharedLayoutsData].filter((layout: GeneratedLayout, index, arr) => 

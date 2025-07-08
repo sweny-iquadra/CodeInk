@@ -757,6 +757,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.get("/api/accepted-invitations", authenticateToken, async (req, res) => {
+    try {
+      const acceptedInvitations = await storage.getUserAcceptedInvitations(req.user!.userId);
+      res.json(acceptedInvitations);
+    } catch (error: unknown) {
+      console.error("Error fetching accepted invitations:", error);
+      res.status(500).json({ message: "Failed to fetch accepted invitations" });
+    }
+  });
+
   app.post("/api/invitations/:id/respond", authenticateToken, async (req, res) => {
     try {
       const invitationId = parseInt(req.params.id);

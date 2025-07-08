@@ -31,7 +31,7 @@ import {
   type InsertLayoutComment
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, inArray } from "drizzle-orm";
+import { eq, desc, and, or, inArray, isNotNull } from "drizzle-orm";
 
 export interface IStorage {
   // User management
@@ -80,6 +80,7 @@ export interface IStorage {
   // Team invitations
   createTeamInvitation(invitation: InsertTeamInvitation): Promise<TeamInvitation>;
   getUserInvitations(userId: number): Promise<TeamInvitation[]>;
+  getUserAcceptedInvitations(userId: number): Promise<TeamInvitation[]>;
   respondToInvitation(invitationId: number, status: string, userId: number): Promise<TeamInvitation | undefined>;
   getTeamInvitations(teamId: number): Promise<TeamInvitation[]>;
   getAllUsers(): Promise<User[]>; // For user search during invitations
@@ -532,6 +533,36 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(teamInvitations.invitedUserId, userId), eq(teamInvitations.status, "pending")))
       .orderBy(desc(teamInvitations.createdAt));
     return invitations as TeamInvitation[];
+  }
+
+  async getUserAcceptedInvitations(userId: number): Promise<TeamInvitation[]> {
+    const acceptedInvitations = await db
+      .select({
+        id: teamInvitations.id,
+        teamId: teamInvitations.teamId,
+        invitedUserId: teamInvitations.invitedUserId,
+        invitedBy: teamInvitations.invitedBy,
+        role: teamInvitations.role,
+        status: teamInvitations.status,
+        layoutId: teamInvitations.layoutId,
+        message: teamInvitations.message,
+        createdAt: teamInvitations.createdAt,
+        respondedAt: teamInvitations.respondedAt,
+        inviterUsername: users.username,
+        layoutTitle: generatedLayouts.title,
+        teamName: teams.name
+      })
+      .from(teamInvitations)
+      .leftJoin(users, eq(teamInvitations.invitedBy, users.id))
+      .leftJoin(generatedLayouts, eq(teamInvitations.layoutId, generatedLayouts.id))
+      .leftJoin(teams, eq(teamInvitations.teamId, teams.id))
+      .where(and(
+        eq(teamInvitations.invitedUserId, userId), 
+        eq(teamInvitations.status, "accepted"),
+        isNotNull(teamInvitations.layoutId) // Only invitations with layout assignments
+      ))
+      .orderBy(desc(teamInvitations.respondedAt));
+    return acceptedInvitations as TeamInvitation[];
   }
 
   async respondToInvitation(invitationId: number, status: string, userId: number): Promise<TeamInvitation | undefined> {
