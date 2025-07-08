@@ -668,8 +668,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
     staleTime: 5000
   });
 
-  // Debug: log teams data to see what we're getting
-  console.log("Teams data:", teams);
+
 
   // Query for accepted invitations to get shared layouts with permissions
   const { data: acceptedInvitations = [] } = useQuery({
@@ -1490,7 +1489,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                 ) : (
                   <div className="space-y-3">
                     {teams.map((team: Team) => (
-                      <Card key={team.id} className="border border-muted-foreground/20 hover:border-primary/40 transition-colors">
+                      <Card key={team.id} className="border border-muted-foreground/20 hover:border-primary/40 transition-colors bg-card">
                         <CardContent className="p-3">
                           <div className="flex items-center justify-between gap-3">
                             <div className="flex items-center gap-3 min-w-0 flex-1">
@@ -1499,7 +1498,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                               </div>
                               <div className="min-w-0 flex-1">
                                 <div className="flex items-center gap-2">
-                                  <h3 className="font-medium text-sm truncate">{team.name}</h3>
+                                  <h3 className="font-medium text-sm truncate text-foreground">{team.name || 'Unnamed Team'}</h3>
                                   <Badge variant="outline" className="text-xs shrink-0">Admin</Badge>
                                 </div>
                                 {team.description && (
