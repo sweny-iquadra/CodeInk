@@ -1413,9 +1413,14 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                           key={version.id}
                           className="flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-accent transition-colors"
                           onClick={() => {
-                            console.log("Version clicked:", version.id, "versionNumber:", version.versionNumber);
+                            console.log("=== VERSION CLICK DEBUG ===");
+                            console.log("Version clicked ID:", version.id);
+                            console.log("Version number:", version.versionNumber);
+                            console.log("Version title:", version.title);
+                            console.log("Parent layout ID:", version.parentLayoutId);
                             console.log("Version generatedCode preview:", version.generatedCode?.substring(0, 200));
                             console.log("Full version object:", version);
+                            console.log("=== CALLING onSelectLayout ===");
                             onSelectLayout(version);
                           }}
                         >
