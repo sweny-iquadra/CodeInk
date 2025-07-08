@@ -238,6 +238,12 @@ export default function Home() {
 
   const handleSelectLayoutForManagement = (layout: GeneratedLayout) => {
     setSelectedLayoutForManagement(layout);
+    // Also update the code editor to show the selected layout
+    setCurrentCode(layout.generatedCode);
+    setCurrentTitle(layout.title);
+    setCurrentLayoutId(layout.id);
+    setIsReady(true);
+    setOutputTab("preview"); // Auto-switch to preview when selecting layout
     toast({
       title: "Layout selected",
       description: `Selected "${layout.title}" for project management.`,
