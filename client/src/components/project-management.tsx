@@ -1425,24 +1425,19 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
           </div>
         </TabsContent>
 
-        <TabsContent value="collaborate" className="p-4 space-y-6">
+        <TabsContent value="collaborate" className="p-4 space-y-4">
           {/* Teams Management Section */}
-          <Card className="border-2 border-dashed border-primary/20 hover:border-primary/40 transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-              <div className="space-y-1">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  My Teams
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Collaborate with others on design projects
-                </p>
-              </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Users className="h-4 w-4 text-primary" />
+                My Teams
+              </CardTitle>
               <Dialog open={teamDialog} onOpenChange={setTeamDialog}>
                 <DialogTrigger asChild>
-                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                  <Button size="sm" variant="outline">
                     <Plus className="h-4 w-4 mr-1" />
-                    Create Team
+                    Create
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
@@ -1483,57 +1478,42 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
               </Dialog>
             </CardHeader>
             <CardContent className="pt-2">
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {teams.length === 0 ? (
-                  <div className="text-center py-12 text-muted-foreground">
-                    <div className="bg-primary/5 rounded-full p-6 w-fit mx-auto mb-4">
-                      <Users className="h-12 w-12 text-primary/60" />
-                    </div>
-                    <h3 className="font-medium text-base mb-2">No teams yet</h3>
-                    <p className="text-sm max-w-md mx-auto">
-                      Create your first team to start collaborating with others on design projects!
-                    </p>
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                    <p className="text-sm">No teams yet. Create your first team!</p>
                   </div>
                 ) : (
-                  <div className="grid gap-4">
+                  <div className="space-y-3">
                     {teams.map((team: Team) => (
-                      <Card key={team.id} className="border-l-4 border-l-primary hover:shadow-md transition-shadow duration-200">
-                        <CardContent className="p-4">
-                          <div className="flex items-start justify-between">
-                            <div className="flex-1 space-y-2">
-                              <div className="flex items-center gap-3">
-                                <div className="bg-primary/10 p-2 rounded-lg">
-                                  <Users className="h-4 w-4 text-primary" />
-                                </div>
-                                <div>
-                                  <h3 className="font-semibold text-base">{team.name}</h3>
-                                  <div className="flex items-center gap-2 mt-1">
-                                    <Badge variant="default" className="text-xs bg-primary/10 text-primary border-primary/20">
-                                      Admin
-                                    </Badge>
-                                    <span className="text-xs text-muted-foreground">
-                                      Created {new Date(team.createdAt).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                </div>
+                      <Card key={team.id} className="border border-muted-foreground/20 hover:border-primary/40 transition-colors">
+                        <CardContent className="p-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex items-center gap-3 min-w-0 flex-1">
+                              <div className="bg-primary/10 p-1.5 rounded">
+                                <Users className="h-3.5 w-3.5 text-primary" />
                               </div>
-                              {team.description && (
-                                <p className="text-sm text-muted-foreground pl-12 leading-relaxed">
-                                  {team.description}
-                                </p>
-                              )}
+                              <div className="min-w-0 flex-1">
+                                <div className="flex items-center gap-2">
+                                  <h3 className="font-medium text-sm truncate">{team.name}</h3>
+                                  <Badge variant="outline" className="text-xs shrink-0">Admin</Badge>
+                                </div>
+                                {team.description && (
+                                  <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                    {team.description}
+                                  </p>
+                                )}
+                              </div>
                             </div>
-                            <div className="flex items-center gap-3 ml-4">
-                              <div className="text-center">
-                                <Badge variant="secondary" className="text-xs bg-muted/50">
-                                  0 members
-                                </Badge>
-                              </div>
+                            <div className="flex items-center gap-2 shrink-0">
+                              <Badge variant="secondary" className="text-xs">
+                                0 members
+                              </Badge>
                               <Dialog open={inviteDialog === team.id} onOpenChange={(open) => setInviteDialog(open ? team.id : null)}>
                                 <DialogTrigger asChild>
-                                  <Button size="sm" variant="outline" className="hover:bg-primary hover:text-primary-foreground transition-colors">
-                                    <UserPlus className="h-4 w-4 mr-1" />
-                                    Invite
+                                  <Button size="sm" variant="outline" className="h-8 px-3">
+                                    <UserPlus className="h-3.5 w-3.5" />
                                   </Button>
                                 </DialogTrigger>
                                 <DialogContent className="max-w-2xl">
@@ -1561,17 +1541,12 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
           </Card>
 
           {/* Team Invitations Section */}
-          <Card className="border-2 border-dashed border-amber-200 dark:border-amber-800 hover:border-amber-300 dark:hover:border-amber-700 transition-colors">
-            <CardHeader className="pb-4">
-              <div className="space-y-1">
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Mail className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-                  Pending Invitations
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Review and respond to team collaboration requests
-                </p>
-              </div>
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Mail className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                Pending Invitations
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <TeamInvitations onAcceptInvitation={(layoutId) => {
