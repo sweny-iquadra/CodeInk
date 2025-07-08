@@ -180,6 +180,54 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get all layouts accessible to user (own + team shared)
+  app.get("/api/layouts/accessible", authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user!.userId;
+      
+      // Get user's own layouts
+      const ownLayouts = await storage.getUserLayouts(userId, 100);
+      
+      // Get user's teams
+      const teams = await storage.getUserTeams(userId);
+      
+      // Get layouts shared with user's teams (from team invitations that were accepted)
+      const accessibleLayouts = new Map();
+      
+      // Add own layouts
+      ownLayouts.forEach(layout => {
+        accessibleLayouts.set(layout.id, layout);
+      });
+      
+      // Get team shared layouts through accepted invitations
+      for (const team of teams) {
+        const teamMembers = await storage.getTeamMembers(team.id);
+        const userMember = teamMembers.find(member => member.userId === userId);
+        
+        if (userMember) {
+          // User is a team member, get shared layouts for this team
+          const sharedLayouts = await storage.getSharedLayouts(userId);
+          sharedLayouts.forEach(share => {
+            if (share.sharedWithTeamId === team.id) {
+              // Fetch the actual layout
+              storage.getLayout(share.layoutId).then(layout => {
+                if (layout) {
+                  accessibleLayouts.set(layout.id, layout);
+                }
+              });
+            }
+          });
+        }
+      }
+      
+      const resultLayouts = Array.from(accessibleLayouts.values());
+      res.json(resultLayouts);
+    } catch (error: unknown) {
+      console.error("Error fetching accessible layouts:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
   // Get individual layout by ID (protected)
   app.get("/api/layouts/:id", authenticateToken, async (req, res) => {
     try {

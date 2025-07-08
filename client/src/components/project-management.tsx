@@ -475,6 +475,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
   const [tagDialog, setTagDialog] = useState(false);
   const [teamDialog, setTeamDialog] = useState(false);
   const [activeTab, setActiveTab] = useState(defaultTab);
+  const [teamSharedLayouts, setTeamSharedLayouts] = useState<GeneratedLayout[]>([]);
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
@@ -530,9 +531,11 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
     queryKey: ["/api/layouts"]
   });
 
-  // Get base layouts for dropdown - exclude titles that start with "Improved:"
-  const uniqueLayouts = layouts.filter((layout: GeneratedLayout) => 
-    !layout.parentLayoutId && !layout.title.startsWith("Improved:")
+  // Get base layouts for dropdown - include own layouts and team shared layouts
+  const uniqueLayouts = [...layouts, ...teamSharedLayouts].filter((layout: GeneratedLayout, index, arr) => 
+    !layout.parentLayoutId && 
+    !layout.title.startsWith("Improved:") &&
+    arr.findIndex(l => l.id === layout.id) === index // Remove duplicates
   );
 
   // Query for layouts by category
@@ -1314,14 +1317,28 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                 // Switch to versions tab and set the layout
                 setActiveTab("versions");
                 if (layoutId && onSelectLayout) {
-                  // Fetch the layout and select it
+                  // Fetch the layout and add it to shared layouts
                   queryClient.fetchQuery({
                     queryKey: ["/api/layouts", layoutId],
                     queryFn: () => apiRequest("GET", `/api/layouts/${layoutId}`)
                   }).then((layout: GeneratedLayout) => {
+                    // Add to team shared layouts if not already present
+                    setTeamSharedLayouts(prev => {
+                      if (!prev.find(l => l.id === layout.id)) {
+                        return [...prev, layout];
+                      }
+                      return prev;
+                    });
+                    // Set as selected layout and activate it
+                    setSelectedLayout(layout.id);
                     onSelectLayout(layout);
                   }).catch((error) => {
                     console.error("Failed to fetch layout:", error);
+                    toast({ 
+                      title: "Failed to load shared layout", 
+                      description: "The layout may no longer be available.", 
+                      variant: "destructive" 
+                    });
                   });
                 }
               }} />
