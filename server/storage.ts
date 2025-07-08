@@ -510,11 +510,28 @@ export class DatabaseStorage implements IStorage {
 
   async getUserInvitations(userId: number): Promise<TeamInvitation[]> {
     const invitations = await db
-      .select()
+      .select({
+        id: teamInvitations.id,
+        teamId: teamInvitations.teamId,
+        invitedUserId: teamInvitations.invitedUserId,
+        invitedBy: teamInvitations.invitedBy,
+        role: teamInvitations.role,
+        status: teamInvitations.status,
+        layoutId: teamInvitations.layoutId,
+        message: teamInvitations.message,
+        createdAt: teamInvitations.createdAt,
+        respondedAt: teamInvitations.respondedAt,
+        inviterUsername: users.username,
+        layoutTitle: generatedLayouts.title,
+        teamName: teams.name
+      })
       .from(teamInvitations)
+      .leftJoin(users, eq(teamInvitations.invitedBy, users.id))
+      .leftJoin(generatedLayouts, eq(teamInvitations.layoutId, generatedLayouts.id))
+      .leftJoin(teams, eq(teamInvitations.teamId, teams.id))
       .where(and(eq(teamInvitations.invitedUserId, userId), eq(teamInvitations.status, "pending")))
       .orderBy(desc(teamInvitations.createdAt));
-    return invitations;
+    return invitations as TeamInvitation[];
   }
 
   async respondToInvitation(invitationId: number, status: string, userId: number): Promise<TeamInvitation | undefined> {

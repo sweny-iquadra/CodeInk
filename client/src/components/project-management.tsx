@@ -323,7 +323,7 @@ function TeamInvitationInterface({ team, layouts, onClose }: { team: Team; layou
 }
 
 // Team Invitations Component
-function TeamInvitations() {
+function TeamInvitations({ onAcceptInvitation }: { onAcceptInvitation?: (layoutId?: number) => void }) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -339,11 +339,16 @@ function TeamInvitations() {
   const respondToInvitationMutation = useMutation({
     mutationFn: ({ invitationId, status }: { invitationId: number; status: string }) =>
       apiRequest("POST", `/api/invitations/${invitationId}/respond`, { status }),
-    onSuccess: (_, variables) => {
+    onSuccess: (invitation, variables) => {
       const action = variables.status === "accepted" ? "accepted" : "declined";
       toast({ title: `Invitation ${action} successfully!` });
       queryClient.invalidateQueries({ queryKey: ["/api/invitations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+      
+      // If invitation was accepted, trigger tab switch and layout binding
+      if (variables.status === "accepted" && onAcceptInvitation) {
+        onAcceptInvitation(invitation.layoutId);
+      }
     },
     onError: (error: any) => {
       toast({ 
@@ -408,8 +413,16 @@ function TeamInvitations() {
           <div className="flex items-start justify-between">
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-2">
-                <div className="font-medium text-sm">Team Invitation</div>
+                <div className="font-medium text-sm">
+                  Invitation from {invitation.inviterUsername || 'Unknown User'}
+                </div>
                 <Badge variant="outline" className="text-xs">{invitation.role}</Badge>
+              </div>
+              <div className="text-sm text-muted-foreground mb-2">
+                Team: <span className="font-medium">{invitation.teamName}</span>
+                {invitation.layoutTitle && (
+                  <span> • Layout: <span className="font-medium">{invitation.layoutTitle}</span></span>
+                )}
               </div>
               {invitation.message && (
                 <p className="text-sm text-muted-foreground mb-2">"{invitation.message}"</p>
@@ -449,9 +462,11 @@ function TeamInvitations() {
 interface ProjectManagementProps {
   onSelectLayout: (layout: GeneratedLayout) => void;
   currentLayout?: GeneratedLayout;
+  defaultTab?: string;
+  onTabChange?: (tab: string) => void;
 }
 
-export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectManagementProps) {
+export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = "organization", onTabChange }: ProjectManagementProps) {
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -459,6 +474,12 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
   const [categoryDialog, setCategoryDialog] = useState(false);
   const [tagDialog, setTagDialog] = useState(false);
   const [teamDialog, setTeamDialog] = useState(false);
+  const [activeTab, setActiveTab] = useState(defaultTab);
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    onTabChange?.(value);
+  };
   const [inviteDialog, setInviteDialog] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
@@ -710,15 +731,15 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
         </h2>
       </div>
 
-      <Tabs defaultValue="organize" className="flex-1">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1">
         <TabsList className="w-full grid grid-cols-4">
-          <TabsTrigger value="organize">Organize</TabsTrigger>
+          <TabsTrigger value="organization">Organization</TabsTrigger>
           <TabsTrigger value="versions">Versions</TabsTrigger>
           <TabsTrigger value="collaborate">Teams</TabsTrigger>
           <TabsTrigger value="search">Search</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="organize" className="p-4 space-y-4">
+        <TabsContent value="organization" className="p-4 space-y-4">
           {/* Categories Section */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -1289,7 +1310,21 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <TeamInvitations />
+              <TeamInvitations onAcceptInvitation={(layoutId) => {
+                // Switch to versions tab and set the layout
+                setActiveTab("versions");
+                if (layoutId && onSelectLayout) {
+                  // Fetch the layout and select it
+                  queryClient.fetchQuery({
+                    queryKey: ["/api/layouts", layoutId],
+                    queryFn: () => apiRequest("GET", `/api/layouts/${layoutId}`)
+                  }).then((layout: GeneratedLayout) => {
+                    onSelectLayout(layout);
+                  }).catch((error) => {
+                    console.error("Failed to fetch layout:", error);
+                  });
+                }
+              }} />
             </CardContent>
           </Card>
 

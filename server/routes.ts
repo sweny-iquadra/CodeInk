@@ -180,6 +180,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get individual layout by ID (protected)
+  app.get("/api/layouts/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const layout = await storage.getLayout(id);
+      
+      if (!layout) {
+        return res.status(404).json({ message: "Layout not found" });
+      }
+      
+      res.json(layout);
+    } catch (error: unknown) {
+      console.error("Error fetching layout:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
   // Get recent public layouts for gallery
   app.get("/api/public-layouts", async (req, res) => {
     try {

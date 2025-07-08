@@ -353,7 +353,11 @@ export type Team = typeof teams.$inferSelect;
 export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
 export type TeamMember = typeof teamMembers.$inferSelect;
 export type InsertTeamInvitation = z.infer<typeof insertTeamInvitationSchema>;
-export type TeamInvitation = typeof teamInvitations.$inferSelect;
+export type TeamInvitation = typeof teamInvitations.$inferSelect & {
+  inviterUsername?: string;
+  layoutTitle?: string;
+  teamName?: string;
+};
 export type InsertSharedLayout = z.infer<typeof insertSharedLayoutSchema>;
 export type SharedLayout = typeof sharedLayouts.$inferSelect;
 export type InsertLayoutComment = z.infer<typeof insertLayoutCommentSchema>;
