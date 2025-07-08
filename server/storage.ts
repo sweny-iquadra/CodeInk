@@ -31,7 +31,7 @@ import {
   type InsertLayoutComment
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, inArray, isNotNull } from "drizzle-orm";
+import { eq, desc, asc, and, or, inArray, isNotNull } from "drizzle-orm";
 
 export interface IStorage {
   // User management
@@ -444,7 +444,10 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(generatedLayouts)
       .where(or(eq(generatedLayouts.id, parentId), eq(generatedLayouts.parentLayoutId, parentId)))
-      .orderBy(desc(generatedLayouts.createdAt));
+      .orderBy(asc(generatedLayouts.createdAt)); // Changed to ascending order to show v1.0 first, then v1.1
+    
+    console.log(`getLayoutVersionHistory for layout ${layoutId}, parentId ${parentId}, found versions:`, 
+      allVersions.map(v => `ID ${v.id} ${v.versionNumber}`));
     return allVersions;
   }
 
