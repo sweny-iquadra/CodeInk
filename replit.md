@@ -248,6 +248,12 @@ Preferred communication style: Simple, everyday language.
   * Permission enforcement: viewers can view only, editors can edit, admins have full access
   * Enhanced dropdown with role icons (👁️ viewer, ✏️ editor, ⚡ admin) and team name display
   * Complete team collaboration workflow from invitation to shared layout access
+- July 08, 2025. Database management and team invitation workflow optimization:
+  * Created new storage method getUserAcceptedInvitations() to properly fetch accepted invitations with layout assignments
+  * Added dedicated API endpoint /api/accepted-invitations for accessing shared layouts from team invitations
+  * Fixed duplicate variable declaration issues that were causing compilation errors
+  * Enhanced Version Control dropdown to automatically show shared layouts when users accept team invitations
+  * Cleared all database tables for fresh testing of the complete team collaboration workflow
 
 ## User Preferences
 
