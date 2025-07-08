@@ -28,6 +28,12 @@ import {
   Eye,
   EyeOff,
   GitBranch,
+  User,
+  Shield,
+  Crown,
+  Layout,
+  Info,
+  Send,
   Clock,
   Filter,
   X,
@@ -189,52 +195,78 @@ function TeamInvitationInterface({ team, onClose }: { team: Team; onClose: () =>
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {/* User Selection */}
-      <div className="space-y-2">
-        <Label>Select User to Invite *</Label>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <User className="h-4 w-4 text-primary" />
+          <Label className="text-sm font-medium">Select User to Invite *</Label>
+        </div>
         <Popover open={userComboOpen} onOpenChange={setUserComboOpen}>
           <PopoverTrigger asChild>
             <Button
               variant="outline"
               role="combobox"
               aria-expanded={userComboOpen}
-              className="w-full justify-between"
+              className="w-full justify-between h-12 bg-background hover:bg-accent/50 border-2 border-dashed border-muted-foreground/20 hover:border-primary/40"
             >
-              {selectedUser
-                ? `${selectedUser.username} (${selectedUser.email})`
-                : "Search and select user..."}
+              {selectedUser ? (
+                <div className="flex items-center gap-3">
+                  <div className="bg-primary/10 p-1.5 rounded-full">
+                    <User className="h-3 w-3 text-primary" />
+                  </div>
+                  <div className="text-left">
+                    <div className="font-medium text-sm">{selectedUser.username}</div>
+                    <div className="text-xs text-muted-foreground">{selectedUser.email}</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 text-muted-foreground">
+                  <Search className="h-4 w-4" />
+                  <span>Search and select user...</span>
+                </div>
+              )}
               <ChevronRight className="ml-2 h-4 w-4 shrink-0 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-full p-0">
-            <div className="p-2">
-              <Input
-                placeholder="Type to search users..."
-                value={userSearchQuery}
-                onChange={(e) => setUserSearchQuery(e.target.value)}
-                className="mb-2"
-              />
+          <PopoverContent className="w-full p-0" align="start">
+            <div className="p-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Type to search users..."
+                  value={userSearchQuery}
+                  onChange={(e) => setUserSearchQuery(e.target.value)}
+                  className="pl-10 h-10"
+                />
+              </div>
               {userSearchQuery.length > 0 && userSearchQuery.length < 2 && (
-                <div className="text-sm text-muted-foreground p-2">Type at least 2 characters to search</div>
+                <div className="text-sm text-muted-foreground p-3 text-center">
+                  Type at least 2 characters to search
+                </div>
               )}
               {userSearchQuery.length >= 2 && filteredUsers.length === 0 && (
-                <div className="text-sm text-muted-foreground p-2">No users found</div>
+                <div className="text-sm text-muted-foreground p-3 text-center">No users found</div>
               )}
-              <div className="max-h-60 overflow-y-auto">
+              <div className="max-h-60 overflow-y-auto mt-2">
                 {filteredUsers.map((user: User) => user && (
                   <div
                     key={user.id}
-                    className="flex items-center justify-between p-2 hover:bg-accent rounded cursor-pointer"
+                    className="flex items-center justify-between p-3 hover:bg-accent rounded-lg cursor-pointer transition-colors"
                     onClick={() => {
                       setSelectedUser(user);
                       setUserComboOpen(false);
                       setUserSearchQuery("");
                     }}
                   >
-                    <div>
-                      <div className="font-medium text-sm">{user.username || 'Unknown'}</div>
-                      <div className="text-xs text-muted-foreground">{user.email || 'No email'}</div>
+                    <div className="flex items-center gap-3">
+                      <div className="bg-primary/10 p-1.5 rounded-full">
+                        <User className="h-3 w-3 text-primary" />
+                      </div>
+                      <div>
+                        <div className="font-medium text-sm">{user.username || 'Unknown'}</div>
+                        <div className="text-xs text-muted-foreground">{user.email || 'No email'}</div>
+                      </div>
                     </div>
                     {selectedUser?.id === user.id && (
                       <Check className="h-4 w-4 text-green-600" />
@@ -248,24 +280,70 @@ function TeamInvitationInterface({ team, onClose }: { team: Team; onClose: () =>
       </div>
 
       {/* Role Selection */}
-      <div className="space-y-2">
-        <Label>Assign Role</Label>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Shield className="h-4 w-4 text-primary" />
+          <Label className="text-sm font-medium">Assign Role</Label>
+        </div>
         <Select value={selectedRole} onValueChange={setSelectedRole}>
-          <SelectTrigger>
+          <SelectTrigger className="h-12 border-2 border-dashed border-muted-foreground/20 hover:border-primary/40">
             <SelectValue placeholder="Select role" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="admin">Admin - Full control</SelectItem>
-            <SelectItem value="editor">Editor - Can create/edit layouts</SelectItem>
-            <SelectItem value="viewer">Viewer - View layouts and comment</SelectItem>
-            <SelectItem value="member">Member - Basic collaboration</SelectItem>
+            <SelectItem value="admin" className="p-3">
+              <div className="flex items-center gap-3">
+                <div className="bg-red-100 dark:bg-red-900/20 p-1.5 rounded">
+                  <Crown className="h-3 w-3 text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <div className="font-medium text-sm">Admin</div>
+                  <div className="text-xs text-muted-foreground">Full control over team and layouts</div>
+                </div>
+              </div>
+            </SelectItem>
+            <SelectItem value="editor" className="p-3">
+              <div className="flex items-center gap-3">
+                <div className="bg-blue-100 dark:bg-blue-900/20 p-1.5 rounded">
+                  <Edit className="h-3 w-3 text-blue-600 dark:text-blue-400" />
+                </div>
+                <div>
+                  <div className="font-medium text-sm">Editor</div>
+                  <div className="text-xs text-muted-foreground">Can create and edit layouts</div>
+                </div>
+              </div>
+            </SelectItem>
+            <SelectItem value="viewer" className="p-3">
+              <div className="flex items-center gap-3">
+                <div className="bg-green-100 dark:bg-green-900/20 p-1.5 rounded">
+                  <Eye className="h-3 w-3 text-green-600 dark:text-green-400" />
+                </div>
+                <div>
+                  <div className="font-medium text-sm">Viewer</div>
+                  <div className="text-xs text-muted-foreground">View layouts and add comments</div>
+                </div>
+              </div>
+            </SelectItem>
+            <SelectItem value="member" className="p-3">
+              <div className="flex items-center gap-3">
+                <div className="bg-gray-100 dark:bg-gray-900/20 p-1.5 rounded">
+                  <Users className="h-3 w-3 text-gray-600 dark:text-gray-400" />
+                </div>
+                <div>
+                  <div className="font-medium text-sm">Member</div>
+                  <div className="text-xs text-muted-foreground">Basic collaboration access</div>
+                </div>
+              </div>
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
 
       {/* Layout Selection */}
-      <div className="space-y-2">
-        <Label>Assign Specific Layout *</Label>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <Layout className="h-4 w-4 text-primary" />
+          <Label className="text-sm font-medium">Assign Specific Layout *</Label>
+        </div>
         <Select 
           value={selectedLayout?.id?.toString() || ""} 
           onValueChange={(value) => {
@@ -273,7 +351,7 @@ function TeamInvitationInterface({ team, onClose }: { team: Team; onClose: () =>
             setSelectedLayout(layout || null);
           }}
         >
-          <SelectTrigger>
+          <SelectTrigger className="h-12 border-2 border-dashed border-muted-foreground/20 hover:border-primary/40">
             <SelectValue placeholder="Select layout (required)" />
           </SelectTrigger>
           <SelectContent>
@@ -289,8 +367,18 @@ function TeamInvitationInterface({ team, onClose }: { team: Team; onClose: () =>
                 : 'v1.0';
               
               return (
-                <SelectItem key={layout.id} value={layout.id.toString()}>
-                  {layout.title} {versionDisplay}
+                <SelectItem key={layout.id} value={layout.id.toString()} className="p-3">
+                  <div className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-1.5 rounded">
+                      <Layout className="h-3 w-3 text-primary" />
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">{layout.title} {versionDisplay}</div>
+                      <div className="text-xs text-muted-foreground truncate max-w-60">
+                        {layout.description}
+                      </div>
+                    </div>
+                  </div>
                 </SelectItem>
               );
             })}
@@ -302,38 +390,69 @@ function TeamInvitationInterface({ team, onClose }: { team: Team; onClose: () =>
 
       {/* Auto-bind Categories and Tags Info */}
       {selectedLayout && (
-        <div className="p-3 bg-muted/30 rounded-md">
-          <div className="text-sm font-medium mb-2">Layout Details:</div>
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <div>Title: {selectedLayout.title}</div>
-            <div>Description: {selectedLayout.description || "No description"}</div>
+        <div className="p-4 bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg border border-primary/20">
+          <div className="flex items-center gap-2 mb-3">
+            <Info className="h-4 w-4 text-primary" />
+            <div className="text-sm font-medium text-primary">Layout Details</div>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-muted-foreground min-w-20">Title:</span>
+              <span>{selectedLayout.title}</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <span className="font-medium text-muted-foreground min-w-20">Description:</span>
+              <span className="text-muted-foreground">{selectedLayout.description || "No description"}</span>
+            </div>
             {selectedLayout.categoryId && (
-              <div>Category: {categories.find(c => c.id === selectedLayout.categoryId)?.name || "Unknown"}</div>
+              <div className="flex items-start gap-2">
+                <span className="font-medium text-muted-foreground min-w-20">Category:</span>
+                <span>{categories.find(c => c.id === selectedLayout.categoryId)?.name || "Unknown"}</span>
+              </div>
             )}
-            <div>Categories and tags will be automatically available to the team member.</div>
+            <div className="mt-3 p-2 bg-primary/5 rounded text-xs text-primary/80">
+              💡 Categories and tags will be automatically available to the team member
+            </div>
           </div>
         </div>
       )}
 
       {/* Message */}
-      <div className="space-y-2">
-        <Label>Message (Optional)</Label>
+      <div className="space-y-3">
+        <div className="flex items-center gap-2">
+          <MessageSquare className="h-4 w-4 text-primary" />
+          <Label className="text-sm font-medium">Personal Message (Optional)</Label>
+        </div>
         <Textarea
-          placeholder="Add a personal message for the invitation..."
+          placeholder="Add a personal message for the invitation... (e.g., 'Looking forward to collaborating on this project!')"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          rows={3}
+          rows={4}
+          className="resize-none border-2 border-dashed border-muted-foreground/20 hover:border-primary/40 focus:border-primary/60"
         />
       </div>
 
       {/* Send Invitation Button */}
-      <Button 
-        onClick={handleSendInvitation}
-        disabled={!selectedUser || !selectedLayout || inviteUserMutation.isPending}
-        className="w-full"
-      >
-        {inviteUserMutation.isPending ? "Sending Invitation..." : "Send Invitation"}
-      </Button>
+      <div className="pt-4 border-t border-muted-foreground/20">
+        <Button 
+          onClick={handleSendInvitation}
+          disabled={!selectedUser || !selectedLayout || inviteUserMutation.isPending}
+          className="w-full h-12 bg-primary hover:bg-primary/90 text-primary-foreground font-medium text-base"
+          size="lg"
+        >
+          {inviteUserMutation.isPending ? (
+            <div className="flex items-center gap-2">
+              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground"></div>
+              Sending Invitation...
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <Send className="h-4 w-4" />
+              Send Invitation
+            </div>
+          )}
+        </Button>
+      </div>
     </div>
   );
 }
@@ -1306,18 +1425,23 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
           </div>
         </TabsContent>
 
-        <TabsContent value="collaborate" className="p-4 space-y-4">
+        <TabsContent value="collaborate" className="p-4 space-y-6">
           {/* Teams Management Section */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Users className="h-4 w-4" />
-                My Teams
-              </CardTitle>
+          <Card className="border-2 border-dashed border-primary/20 hover:border-primary/40 transition-colors">
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
+              <div className="space-y-1">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Users className="h-5 w-5 text-primary" />
+                  My Teams
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Collaborate with others on design projects
+                </p>
+              </div>
               <Dialog open={teamDialog} onOpenChange={setTeamDialog}>
                 <DialogTrigger asChild>
-                  <Button size="sm" variant="outline">
-                    <Plus className="h-4 w-4" />
+                  <Button size="sm" className="bg-primary text-primary-foreground hover:bg-primary/90">
+                    <Plus className="h-4 w-4 mr-1" />
                     Create Team
                   </Button>
                 </DialogTrigger>
@@ -1358,68 +1482,96 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                 </DialogContent>
               </Dialog>
             </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
+            <CardContent className="pt-2">
+              <div className="space-y-4">
                 {teams.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No teams yet. Create your first team to start collaborating!</p>
+                  <div className="text-center py-12 text-muted-foreground">
+                    <div className="bg-primary/5 rounded-full p-6 w-fit mx-auto mb-4">
+                      <Users className="h-12 w-12 text-primary/60" />
+                    </div>
+                    <h3 className="font-medium text-base mb-2">No teams yet</h3>
+                    <p className="text-sm max-w-md mx-auto">
+                      Create your first team to start collaborating with others on design projects!
+                    </p>
                   </div>
                 ) : (
-                  teams.map((team: Team) => (
-                    <Card key={team.id} className="p-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h3 className="font-medium text-sm">{team.name}</h3>
-                            <Badge variant="outline" className="text-xs">Admin</Badge>
+                  <div className="grid gap-4">
+                    {teams.map((team: Team) => (
+                      <Card key={team.id} className="border-l-4 border-l-primary hover:shadow-md transition-shadow duration-200">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center gap-3">
+                                <div className="bg-primary/10 p-2 rounded-lg">
+                                  <Users className="h-4 w-4 text-primary" />
+                                </div>
+                                <div>
+                                  <h3 className="font-semibold text-base">{team.name}</h3>
+                                  <div className="flex items-center gap-2 mt-1">
+                                    <Badge variant="default" className="text-xs bg-primary/10 text-primary border-primary/20">
+                                      Admin
+                                    </Badge>
+                                    <span className="text-xs text-muted-foreground">
+                                      Created {new Date(team.createdAt).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                              {team.description && (
+                                <p className="text-sm text-muted-foreground pl-12 leading-relaxed">
+                                  {team.description}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-3 ml-4">
+                              <div className="text-center">
+                                <Badge variant="secondary" className="text-xs bg-muted/50">
+                                  0 members
+                                </Badge>
+                              </div>
+                              <Dialog open={inviteDialog === team.id} onOpenChange={(open) => setInviteDialog(open ? team.id : null)}>
+                                <DialogTrigger asChild>
+                                  <Button size="sm" variant="outline" className="hover:bg-primary hover:text-primary-foreground transition-colors">
+                                    <UserPlus className="h-4 w-4 mr-1" />
+                                    Invite
+                                  </Button>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-2xl">
+                                  <DialogHeader>
+                                    <DialogTitle>Invite Team Members - {team.name}</DialogTitle>
+                                    <DialogDescription>
+                                      Search and invite users to join your team with specific roles and layout permissions.
+                                    </DialogDescription>
+                                  </DialogHeader>
+                                  <TeamInvitationInterface 
+                                    team={team} 
+                                    onClose={() => setInviteDialog(null)}
+                                  />
+                                </DialogContent>
+                              </Dialog>
+                            </div>
                           </div>
-                          {team.description && (
-                            <p className="text-xs text-muted-foreground mb-2">{team.description}</p>
-                          )}
-                          <div className="text-xs text-muted-foreground">
-                            Created {new Date(team.createdAt).toLocaleDateString()}
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="secondary" className="text-xs">
-                            0 members
-                          </Badge>
-                          <Dialog open={inviteDialog === team.id} onOpenChange={(open) => setInviteDialog(open ? team.id : null)}>
-                            <DialogTrigger asChild>
-                              <Button size="sm" variant="outline">
-                                <UserPlus className="h-4 w-4" />
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
-                              <DialogHeader>
-                                <DialogTitle>Invite Team Members - {team.name}</DialogTitle>
-                                <DialogDescription>
-                                  Search and invite users to join your team with specific roles and layout permissions.
-                                </DialogDescription>
-                              </DialogHeader>
-                              <TeamInvitationInterface 
-                                team={team} 
-                                onClose={() => setInviteDialog(null)}
-                              />
-                            </DialogContent>
-                          </Dialog>
-                        </div>
-                      </div>
-                    </Card>
-                  ))
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
                 )}
               </div>
             </CardContent>
           </Card>
 
           {/* Team Invitations Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Mail className="h-4 w-4" />
-                Pending Invitations
-              </CardTitle>
+          <Card className="border-2 border-dashed border-amber-200 dark:border-amber-800 hover:border-amber-300 dark:hover:border-amber-700 transition-colors">
+            <CardHeader className="pb-4">
+              <div className="space-y-1">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Mail className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+                  Pending Invitations
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Review and respond to team collaboration requests
+                </p>
+              </div>
             </CardHeader>
             <CardContent>
               <TeamInvitations onAcceptInvitation={(layoutId) => {
