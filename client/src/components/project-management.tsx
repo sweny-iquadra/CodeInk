@@ -93,8 +93,9 @@ function TeamInvitationInterface({ team, layouts }: { team: Team; layouts: Gener
 
   // Filter users based on search
   const filteredUsers = users.filter(user => 
-    user.username.toLowerCase().includes(userSearch.toLowerCase()) ||
-    user.email.toLowerCase().includes(userSearch.toLowerCase())
+    user && user.username && user.email &&
+    (user.username.toLowerCase().includes(userSearch.toLowerCase()) ||
+    user.email.toLowerCase().includes(userSearch.toLowerCase()))
   );
 
   // Get categories and tags for selected layout
@@ -160,7 +161,7 @@ function TeamInvitationInterface({ team, layouts }: { team: Team; layouts: Gener
           {filteredUsers.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-4">No users found</p>
           ) : (
-            filteredUsers.map((user: User) => (
+            filteredUsers.map((user: User) => user && (
               <div
                 key={user.id}
                 className={`p-3 cursor-pointer hover:bg-muted/50 transition-colors ${
@@ -170,8 +171,8 @@ function TeamInvitationInterface({ team, layouts }: { team: Team; layouts: Gener
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium text-sm">{user.username}</div>
-                    <div className="text-xs text-muted-foreground">{user.email}</div>
+                    <div className="font-medium text-sm">{user.username || 'Unknown'}</div>
+                    <div className="text-xs text-muted-foreground">{user.email || 'No email'}</div>
                   </div>
                   {selectedUser?.id === user.id && (
                     <Check className="h-4 w-4 text-green-600" />
@@ -672,6 +673,9 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Create Category</DialogTitle>
+                    <DialogDescription>
+                      Create a new category to organize your layouts with a custom color.
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
@@ -815,6 +819,9 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Create Tag</DialogTitle>
+                    <DialogDescription>
+                      Create a new tag to categorize and filter your layouts.
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
@@ -922,6 +929,9 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                       <DialogContent className="sm:max-w-md" aria-describedby="add-tag-description">
                         <DialogHeader>
                           <DialogTitle className="text-sm">Add Tag to Layout</DialogTitle>
+                          <DialogDescription>
+                            Select a tag to assign to this layout for better organization.
+                          </DialogDescription>
                         </DialogHeader>
                         <p id="add-tag-description" className="text-sm text-muted-foreground">
                           Select a tag to assign to this layout.
@@ -1118,6 +1128,9 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>Create New Team</DialogTitle>
+                    <DialogDescription>
+                      Create a team to collaborate on layouts with other users.
+                    </DialogDescription>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
