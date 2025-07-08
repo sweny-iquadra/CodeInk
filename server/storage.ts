@@ -723,6 +723,13 @@ export class DatabaseStorage implements IStorage {
     dateFrom?: Date;
     dateTo?: Date;
   }): Promise<GeneratedLayout[]> {
+    console.log("searchLayouts called with userId:", userId, "type:", typeof userId);
+    
+    if (!userId || isNaN(userId)) {
+      console.error("Invalid userId passed to searchLayouts:", userId);
+      throw new Error("Invalid user ID");
+    }
+    
     let whereClause = eq(generatedLayouts.userId, userId);
 
     if (filters?.categoryId) {

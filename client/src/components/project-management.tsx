@@ -779,8 +779,10 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
   // Ensure currentLayoutTags is always an array for safety
   const safeCurrentLayoutTags = Array.isArray(currentLayoutTags) ? currentLayoutTags : [];
 
-  // Auto-search with all filters
-  const { data: searchResults = [] } = useQuery<GeneratedLayout[]>({
+  // Auto-search with all filters - only run when there are actual filters
+  const hasFilters = Boolean(debouncedSearchQuery || selectedCategory || selectedTags.length > 0 || dateFrom || dateTo);
+  
+  const { data: searchResults = [], isLoading: isSearching, error: searchError } = useQuery<GeneratedLayout[]>({
     queryKey: ["/api/layouts/search", debouncedSearchQuery, selectedCategory, selectedTags, dateFrom, dateTo],
     queryFn: async () => {
       const params = new URLSearchParams();
@@ -793,9 +795,13 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
       const response = await apiRequest("GET", `/api/layouts/search?${params.toString()}`);
       return response.json();
     },
-    enabled: true, // Always enable to allow filtering even without search text
+    enabled: hasFilters, // Only search when there are filters
     staleTime: 300, // Cache for 300ms to avoid excessive requests
+    retry: false, // Don't retry on error
   });
+
+  // Fallback to user layouts when no search filters are applied
+  const displayResults = hasFilters ? searchResults : layouts;
 
 
 
@@ -1742,7 +1748,34 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
 
             {/* Search Results */}
             <div className="space-y-2">
-              {searchResults.map((layout: GeneratedLayout) => (
+              {isSearching && hasFilters && (
+                <div className="text-center py-4 text-muted-foreground">
+                  <div className="flex items-center justify-center gap-2">
+                    <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    Searching layouts...
+                  </div>
+                </div>
+              )}
+              
+              {searchError && hasFilters && (
+                <div className="text-center py-4 text-red-500">
+                  <p>Search failed. Please try again.</p>
+                </div>
+              )}
+              
+              {!isSearching && displayResults.length === 0 && hasFilters && (
+                <div className="text-center py-4 text-muted-foreground">
+                  <p>No layouts found matching your search criteria.</p>
+                </div>
+              )}
+              
+              {!hasFilters && layouts.length === 0 && (
+                <div className="text-center py-4 text-muted-foreground">
+                  <p>No layouts found. Create some layouts to see them here.</p>
+                </div>
+              )}
+              
+              {displayResults.map((layout: GeneratedLayout) => (
                 <div
                   key={layout.id}
                   className="p-3 border rounded cursor-pointer hover:bg-accent"
