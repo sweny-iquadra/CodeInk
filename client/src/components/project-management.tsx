@@ -937,30 +937,25 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
 
 
   return (
-    <div className="h-full flex flex-col">
-      <div className="p-4 border-b">
-        <h2 className="text-lg font-semibold flex items-center gap-2">
-          <Folder className="h-5 w-5" />
-          Project Management
-        </h2>
-      </div>
+    <div className="h-full">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full">
+        <div className="border-b bg-muted/30 px-4 py-3">
+          <TabsList className="grid grid-cols-4 w-full max-w-md">
+            <TabsTrigger value="organization" className="text-xs">Organization</TabsTrigger>
+            <TabsTrigger value="versions" className="text-xs">Versions</TabsTrigger>
+            <TabsTrigger value="collaborate" className="text-xs">Teams</TabsTrigger>
+            <TabsTrigger value="search" className="text-xs">Search</TabsTrigger>
+          </TabsList>
+        </div>
 
-      <Tabs value={activeTab} onValueChange={handleTabChange} className="flex-1">
-        <TabsList className="w-full grid grid-cols-4">
-          <TabsTrigger value="organization">Organization</TabsTrigger>
-          <TabsTrigger value="versions">Versions</TabsTrigger>
-          <TabsTrigger value="collaborate">Teams</TabsTrigger>
-          <TabsTrigger value="search">Search</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="organization" className="p-4 space-y-4">
+        <TabsContent value="organization" className="p-4 space-y-6">
           {/* Categories Section */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium flex items-center gap-2">
                 <Folder className="h-4 w-4" />
                 Categories
-              </CardTitle>
+              </h3>
               <Dialog open={categoryDialog} onOpenChange={setCategoryDialog}>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="outline">
@@ -1012,39 +1007,38 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                   </div>
                 </DialogContent>
               </Dialog>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-2">
-                {categories.map((category: Category) => (
-                  <div
-                    key={category.id}
-                    className="flex items-center justify-between p-2 rounded border cursor-pointer hover:bg-accent"
-                    onClick={() => setViewingCategoryId(category.id)}
-                  >
-                    <div className="flex items-center gap-2">
-                      <div 
-                        className="w-3 h-3 rounded-full" 
-                        style={{ backgroundColor: category.color }}
-                      />
-                      <span className="text-sm">{category.name}</span>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {getCategoryLayoutCount(category.id)}
-                    </Badge>
+            </div>
+            
+            <div className="space-y-2">
+              {categories.map((category: Category) => (
+                <div
+                  key={category.id}
+                  className="flex items-center justify-between p-2 rounded border cursor-pointer hover:bg-accent"
+                  onClick={() => setViewingCategoryId(category.id)}
+                >
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: category.color }}
+                    />
+                    <span className="text-sm">{category.name}</span>
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <Badge variant="secondary" className="text-xs">
+                    {getCategoryLayoutCount(category.id)}
+                  </Badge>
+                </div>
+              ))}
+            </div>
+          </div>
 
           {/* Category Layouts View */}
           {viewingCategoryId && (
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm flex items-center gap-2">
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="font-medium flex items-center gap-2">
                   <Eye className="h-4 w-4" />
                   Layouts in {categories.find(c => c.id === viewingCategoryId)?.name}
-                </CardTitle>
+                </h3>
                 <Button 
                   size="sm" 
                   variant="ghost" 
@@ -1052,61 +1046,59 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                 >
                   <X className="h-4 w-4" />
                 </Button>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {categoryLayouts.length === 0 ? (
-                    <div className="text-center py-4 text-muted-foreground text-sm">
-                      No layouts in this category yet
-                    </div>
-                  ) : (
-                    Array.isArray(categoryLayouts) && categoryLayouts.map((layout: GeneratedLayout) => (
-                      <div
-                        key={layout.id}
-                        className="flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-accent"
-                        onClick={() => onSelectLayout(layout)}
-                      >
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1">
-                            <h4 className="text-sm font-medium truncate">{layout.title}</h4>
-                            {layout.isPublic ? (
-                              <Eye className="w-3 h-3 text-green-500" />
-                            ) : (
-                              <EyeOff className="w-3 h-3 text-gray-500" />
-                            )}
-                          </div>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {layout.description}
+              </div>
+              <div className="space-y-2">
+                {categoryLayouts.length === 0 ? (
+                  <div className="text-center py-4 text-muted-foreground text-sm">
+                    No layouts in this category yet
+                  </div>
+                ) : (
+                  Array.isArray(categoryLayouts) && categoryLayouts.map((layout: GeneratedLayout) => (
+                    <div
+                      key={layout.id}
+                      className="flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-accent"
+                      onClick={() => onSelectLayout(layout)}
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <h4 className="text-sm font-medium truncate">{layout.title}</h4>
+                          {layout.isPublic ? (
+                            <Eye className="w-3 h-3 text-green-500" />
+                          ) : (
+                            <EyeOff className="w-3 h-3 text-gray-500" />
+                          )}
+                        </div>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {layout.description}
+                        </p>
+                        <div className="flex items-center justify-between mt-1">
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(layout.createdAt).toLocaleDateString()}
                           </p>
-                          <div className="flex items-center justify-between mt-1">
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(layout.createdAt).toLocaleDateString()}
-                            </p>
-                            <div className="flex items-center gap-1">
-                              <Tag className="w-3 h-3 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">
-                                {/* Placeholder for tag count - will be updated with real count */}
-                                0 tags
-                              </span>
-                            </div>
+                          <div className="flex items-center gap-1">
+                            <Tag className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">
+                              {/* Placeholder for tag count - will be updated with real count */}
+                              0 tags
+                            </span>
                           </div>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
                       </div>
-                    ))
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                      <ChevronRight className="w-4 h-4 text-muted-foreground" />
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           )}
 
           {/* Tags Section */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm flex items-center gap-2">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium flex items-center gap-2">
                 <Tag className="h-4 w-4" />
                 Tags
-              </CardTitle>
+              </h3>
               <Dialog open={tagDialog} onOpenChange={setTagDialog}>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="outline">
@@ -1158,55 +1150,52 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                   </div>
                 </DialogContent>
               </Dialog>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-1">
-                {tags.map((tag: TagType) => (
-                  <Badge
-                    key={tag.id}
-                    variant="secondary"
-                    className="text-xs cursor-pointer group flex items-center gap-1 hover:bg-red-50 dark:hover:bg-red-900/20"
-                    style={{ backgroundColor: tag.color + "20", color: tag.color }}
-                    onClick={(e) => {
-                      // Prevent the click from bubbling up when clicking the X button
-                      if ((e.target as HTMLElement).closest('.delete-tag-btn')) {
-                        return;
+            </div>
+            
+            <div className="flex flex-wrap gap-1">
+              {tags.map((tag: TagType) => (
+                <Badge
+                  key={tag.id}
+                  variant="secondary"
+                  className="text-xs cursor-pointer group flex items-center gap-1 hover:bg-red-50 dark:hover:bg-red-900/20"
+                  style={{ backgroundColor: tag.color + "20", color: tag.color }}
+                  onClick={(e) => {
+                    // Prevent the click from bubbling up when clicking the X button
+                    if ((e.target as HTMLElement).closest('.delete-tag-btn')) {
+                      return;
+                    }
+                    setSelectedTags(prev => 
+                      prev.includes(tag.id) 
+                        ? prev.filter(id => id !== tag.id)
+                        : [...prev, tag.id]
+                    );
+                  }}
+                >
+                  <span>{tag.name}</span>
+                  <button
+                    className="delete-tag-btn ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 dark:hover:bg-red-800 rounded-full p-0.5"
+                    onClick={async (e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log("Attempting to delete tag:", { id: tag.id, name: tag.name });
+                      if (window.confirm(`Are you sure you want to delete the tag "${tag.name}"?`)) {
+                        deleteTagMutation.mutate(tag.id);
                       }
-                      setSelectedTags(prev => 
-                        prev.includes(tag.id) 
-                          ? prev.filter(id => id !== tag.id)
-                          : [...prev, tag.id]
-                      );
                     }}
+                    title={`Delete tag "${tag.name}"`}
                   >
-                    <span>{tag.name}</span>
-                    <button
-                      className="delete-tag-btn ml-1 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-100 dark:hover:bg-red-800 rounded-full p-0.5"
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        console.log("Attempting to delete tag:", { id: tag.id, name: tag.name });
-                        if (window.confirm(`Are you sure you want to delete the tag "${tag.name}"?`)) {
-                          deleteTagMutation.mutate(tag.id);
-                        }
-                      }}
-                      title={`Delete tag "${tag.name}"`}
-                    >
-                      <X className="w-3 h-3 text-red-600 dark:text-red-400" />
-                    </button>
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                    <X className="w-3 h-3 text-red-600 dark:text-red-400" />
+                  </button>
+                </Badge>
+              ))}
+            </div>
+          </div>
 
           {/* Current Layout Info */}
           {currentLayout && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Current Layout</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
+            <div className="space-y-3">
+              <h3 className="font-medium">Current Layout</h3>
+              <div className="space-y-3">
                 <div>
                   <h3 className="font-medium">{currentLayout.title}</h3>
                   <p className="text-sm text-muted-foreground">{currentLayout.description}</p>
@@ -1323,8 +1312,8 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                   <MessageSquare className="h-4 w-4" />
                   {currentLayoutComments.length} comments
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
           )}
         </TabsContent>
 
@@ -1357,27 +1346,27 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
             </div>
 
             {selectedLayout && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2">
+              <div className="space-y-3 border rounded p-3">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-medium flex items-center gap-2">
                     <History className="h-4 w-4" />
                     Version History
-                    {(() => {
-                      const currentLayout = uniqueLayouts.find(l => l.id === parseInt(selectedLayout));
-                      if (currentLayout?.sharedRole) {
-                        return (
-                          <Badge variant="outline" className="ml-auto text-xs">
-                            {currentLayout.sharedRole === 'viewer' && '👁️ View Only'}
-                            {currentLayout.sharedRole === 'editor' && '✏️ Can Edit'}
-                            {currentLayout.sharedRole === 'admin' && '⚡ Full Access'}
-                          </Badge>
-                        );
-                      }
-                      return null;
-                    })()}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
+                  </h3>
+                  {(() => {
+                    const currentLayout = uniqueLayouts.find(l => l.id === parseInt(selectedLayout));
+                    if (currentLayout?.sharedRole) {
+                      return (
+                        <Badge variant="outline" className="text-xs">
+                          {currentLayout.sharedRole === 'viewer' && '👁️ View Only'}
+                          {currentLayout.sharedRole === 'editor' && '✏️ Can Edit'}
+                          {currentLayout.sharedRole === 'admin' && '⚡ Full Access'}
+                        </Badge>
+                      );
+                    }
+                    return null;
+                  })()}
+                </div>
+                <div>
                   <div className="space-y-2">
                     {Array.isArray(versionHistory) && versionHistory.length > 0 ? (
                       versionHistory.map((version: GeneratedLayout) => (
@@ -1410,31 +1399,29 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                         </div>
                       )}
                     </div>
-                  </CardContent>
-                </Card>
+                  </div>
+                </div>
             )}
 
             {!selectedLayout && (
-              <Card>
-                <CardContent className="p-6 text-center">
-                  <GitBranch className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    Select a layout above to manage its versions
-                  </p>
-                </CardContent>
-              </Card>
+              <div className="p-6 text-center border rounded">
+                <GitBranch className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">
+                  Select a layout above to manage its versions
+                </p>
+              </div>
             )}
           </div>
         </TabsContent>
 
-        <TabsContent value="collaborate" className="p-4 space-y-4">
+        <TabsContent value="collaborate" className="p-4 space-y-6">
           {/* Teams Management Section */}
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Users className="h-4 w-4 text-primary" />
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium flex items-center gap-2">
+                <Users className="h-4 w-4" />
                 My Teams
-              </CardTitle>
+              </h3>
               <Dialog open={teamDialog} onOpenChange={setTeamDialog}>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="outline">
@@ -1478,81 +1465,76 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                   </div>
                 </DialogContent>
               </Dialog>
-            </CardHeader>
-            <CardContent className="pt-2">
-              <div className="space-y-3">
-                {teams.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground">
-                    <Users className="h-8 w-8 mx-auto mb-3 opacity-50" />
-                    <p className="text-sm">No teams yet. Create your first team!</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {teams.map((team: Team) => (
-                      <Card key={team.id} className="border border-muted-foreground/20 hover:border-primary/40 transition-colors bg-card">
-                        <CardContent className="p-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex items-center gap-3 min-w-0 flex-1">
-                              <div className="bg-primary/10 p-1.5 rounded">
-                                <Users className="h-3.5 w-3.5 text-primary" />
-                              </div>
-                              <div className="min-w-0 flex-1">
-                                <div className="flex items-center gap-2">
-                                  <h3 className="font-medium text-sm text-card-foreground truncate">
-                                    {team.name}
-                                  </h3>
-                                  <Badge variant="outline" className="text-xs shrink-0">Admin</Badge>
-                                </div>
-                                {team.description && (
-                                  <p className="text-xs text-muted-foreground truncate mt-0.5">
-                                    {team.description}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2 shrink-0">
-                              <Badge variant="secondary" className="text-xs">
-                                {team.memberCount || 0} member{(team.memberCount || 0) !== 1 ? 's' : ''}
-                              </Badge>
-                              <Dialog open={inviteDialog === team.id} onOpenChange={(open) => setInviteDialog(open ? team.id : null)}>
-                                <DialogTrigger asChild>
-                                  <Button size="sm" variant="outline" className="h-8 px-3">
-                                    <UserPlus className="h-3.5 w-3.5" />
-                                  </Button>
-                                </DialogTrigger>
-                                <DialogContent className="max-w-2xl">
-                                  <DialogHeader>
-                                    <DialogTitle>Invite Team Members - {team.name}</DialogTitle>
-                                    <DialogDescription>
-                                      Search and invite users to join your team with specific roles and layout permissions.
-                                    </DialogDescription>
-                                  </DialogHeader>
-                                  <TeamInvitationInterface 
-                                    team={team} 
-                                    onClose={() => setInviteDialog(null)}
-                                  />
-                                </DialogContent>
-                              </Dialog>
-                            </div>
+            </div>
+            
+            <div className="space-y-3">
+              {teams.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <Users className="h-8 w-8 mx-auto mb-3 opacity-50" />
+                  <p className="text-sm">No teams yet. Create your first team!</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {teams.map((team: Team) => (
+                    <div key={team.id} className="p-3 border rounded hover:bg-accent transition-colors">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="bg-primary/10 p-1.5 rounded">
+                            <Users className="h-3.5 w-3.5 text-primary" />
                           </div>
-                        </CardContent>
-                      </Card>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <h3 className="font-medium text-sm text-card-foreground truncate">
+                                {team.name}
+                              </h3>
+                              <Badge variant="outline" className="text-xs shrink-0">Admin</Badge>
+                            </div>
+                            {team.description && (
+                              <p className="text-xs text-muted-foreground truncate mt-0.5">
+                                {team.description}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 shrink-0">
+                          <Badge variant="secondary" className="text-xs">
+                            {team.memberCount || 0} member{(team.memberCount || 0) !== 1 ? 's' : ''}
+                          </Badge>
+                          <Dialog open={inviteDialog === team.id} onOpenChange={(open) => setInviteDialog(open ? team.id : null)}>
+                            <DialogTrigger asChild>
+                              <Button size="sm" variant="outline" className="h-8 px-3">
+                                <UserPlus className="h-3.5 w-3.5" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>Invite Team Members - {team.name}</DialogTitle>
+                                <DialogDescription>
+                                  Search and invite users to join your team with specific roles and layout permissions.
+                                </DialogDescription>
+                              </DialogHeader>
+                              <TeamInvitationInterface 
+                                team={team} 
+                                onClose={() => setInviteDialog(null)}
+                              />
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
 
           {/* Team Invitations Section */}
-          <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Mail className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-                Pending Invitations
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="space-y-3">
+            <h3 className="font-medium flex items-center gap-2">
+              <Mail className="h-4 w-4" />
+              Pending Invitations
+            </h3>
+            <div>
               <TeamInvitations onAcceptInvitation={(layoutId) => {
                 // Switch to versions tab and set the layout
                 setActiveTab("versions");
@@ -1582,18 +1564,16 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                   });
                 }
               }} />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Shared Layouts Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-sm flex items-center gap-2">
-                <Share className="h-4 w-4" />
-                Shared with Me
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
+          <div className="space-y-3">
+            <h3 className="font-medium flex items-center gap-2">
+              <Share className="h-4 w-4" />
+              Shared with Me
+            </h3>
+            <div>
               <div className="space-y-2">
                 {sharedLayouts.length === 0 ? (
                   <div className="text-center py-4 text-muted-foreground">
@@ -1619,8 +1599,8 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                   ))
                 )}
               </div>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="search" className="p-4">
@@ -1749,30 +1729,28 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
             {/* Search Results */}
             <div className="space-y-2">
               {searchResults.map((layout: GeneratedLayout) => (
-                <Card
+                <div
                   key={layout.id}
-                  className="cursor-pointer hover:bg-accent"
+                  className="p-3 border rounded cursor-pointer hover:bg-accent"
                   onClick={() => onSelectLayout(layout)}
                 >
-                  <CardContent className="p-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium text-sm">{layout.title}</h3>
-                        <p className="text-xs text-muted-foreground">{layout.description}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {layout.isPublic ? (
-                          <Eye className="h-4 w-4 text-green-500" />
-                        ) : (
-                          <EyeOff className="h-4 w-4 text-gray-500" />
-                        )}
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(layout.createdAt).toLocaleDateString()}
-                        </span>
-                      </div>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h3 className="font-medium text-sm">{layout.title}</h3>
+                      <p className="text-xs text-muted-foreground">{layout.description}</p>
                     </div>
-                  </CardContent>
-                </Card>
+                    <div className="flex items-center gap-2">
+                      {layout.isPublic ? (
+                        <Eye className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <EyeOff className="h-4 w-4 text-gray-500" />
+                      )}
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(layout.createdAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
