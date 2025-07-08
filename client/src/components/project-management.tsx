@@ -139,7 +139,7 @@ function TeamInvitationInterface({ team, layouts }: { team: Team; layouts: Gener
       teamId: team.id,
       invitedUserId: selectedUser.id,
       role: selectedRole,
-      layoutId: selectedVersion?.id || selectedLayout?.id,
+      layoutId: selectedVersion?.id || (selectedLayout ? selectedLayout.id : undefined),
       message: message.trim() || undefined
     };
 
@@ -203,18 +203,23 @@ function TeamInvitationInterface({ team, layouts }: { team: Team; layouts: Gener
       <div className="space-y-2">
         <Label>Assign Specific Layout (Optional)</Label>
         <Select 
-          value={selectedLayout?.id?.toString() || ""} 
+          value={selectedLayout?.id?.toString() || "none"} 
           onValueChange={(value) => {
-            const layout = layouts.find(l => l.id.toString() === value);
-            setSelectedLayout(layout || null);
-            setSelectedVersion(null);
+            if (value === "none") {
+              setSelectedLayout(null);
+              setSelectedVersion(null);
+            } else {
+              const layout = layouts.find(l => l.id.toString() === value);
+              setSelectedLayout(layout || null);
+              setSelectedVersion(null);
+            }
           }}
         >
           <SelectTrigger>
             <SelectValue placeholder="Select layout (optional)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">No specific layout</SelectItem>
+            <SelectItem value="none">No specific layout</SelectItem>
             {layouts.map((layout: GeneratedLayout) => (
               <SelectItem key={layout.id} value={layout.id.toString()}>
                 {layout.title}
@@ -229,10 +234,14 @@ function TeamInvitationInterface({ team, layouts }: { team: Team; layouts: Gener
         <div className="space-y-2">
           <Label>Select Version</Label>
           <Select 
-            value={selectedVersion?.id?.toString() || ""} 
+            value={selectedVersion?.id?.toString() || selectedLayout?.id?.toString() || "none"} 
             onValueChange={(value) => {
-              const version = layoutVersions.find(v => v.id.toString() === value);
-              setSelectedVersion(version || null);
+              if (value === selectedLayout?.id?.toString()) {
+                setSelectedVersion(null);
+              } else {
+                const version = layoutVersions.find(v => v.id.toString() === value);
+                setSelectedVersion(version || null);
+              }
             }}
           >
             <SelectTrigger>
@@ -1176,6 +1185,9 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                             <DialogContent className="max-w-2xl">
                               <DialogHeader>
                                 <DialogTitle>Invite Team Members - {team.name}</DialogTitle>
+                                <DialogDescription>
+                                  Search and invite users to join your team with specific roles and layout permissions.
+                                </DialogDescription>
                               </DialogHeader>
                               <TeamInvitationInterface team={team} layouts={layouts} />
                             </DialogContent>
