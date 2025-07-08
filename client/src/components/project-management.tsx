@@ -243,7 +243,7 @@ function TeamInvitationInterface({ team, onClose }: { team: Team; onClose: () =>
         <Select 
           value={selectedLayout?.id?.toString() || ""} 
           onValueChange={(value) => {
-            const layout = layouts.find(l => l.id.toString() === value);
+            const layout = publicLayouts.find(l => l.id.toString() === value);
             setSelectedLayout(layout || null);
           }}
         >
