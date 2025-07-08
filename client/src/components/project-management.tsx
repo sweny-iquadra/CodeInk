@@ -782,34 +782,9 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
   // Auto-search with all filters - only run when there are actual filters
   const hasFilters = Boolean(debouncedSearchQuery || selectedCategory || selectedTags.length > 0 || dateFrom || dateTo);
   
-  const { data: searchResults = [], isLoading: isSearching, error: searchError } = useQuery<GeneratedLayout[]>({
-    queryKey: ["/api/layouts/search", debouncedSearchQuery, selectedCategory, selectedTags, dateFrom, dateTo],
-    queryFn: async () => {
-      try {
-        const params = new URLSearchParams();
-        if (debouncedSearchQuery) params.append("q", debouncedSearchQuery);
-        if (selectedCategory && selectedCategory !== null) params.append("categoryId", selectedCategory.toString());
-        if (selectedTags.length > 0) params.append("tagIds", selectedTags.join(","));
-        if (dateFrom) params.append("dateFrom", dateFrom);
-        if (dateTo) params.append("dateTo", dateTo);
-        
-        const response = await apiRequest("GET", `/api/layouts/search?${params.toString()}`);
-        
-        if (!response.ok) {
-          console.error("Search failed:", response.status, response.statusText);
-          return [];
-        }
-        
-        return response.json();
-      } catch (error) {
-        console.error("Search error:", error);
-        return [];
-      }
-    },
-    enabled: hasFilters, // Only search when there are filters
-    staleTime: 300, // Cache for 300ms to avoid excessive requests
-    retry: false, // Don't retry on error
-  });
+  // Disable server search for now, use only client-side filtering
+  const isSearching = false;
+  const searchError = null;
 
   // Client-side filtering as fallback while server search is being fixed
   const clientSideFilteredResults = useMemo(() => {
