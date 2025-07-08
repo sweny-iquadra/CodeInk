@@ -72,7 +72,7 @@ interface TeamInvitation {
 }
 
 // Team Invitation Interface Component
-function TeamInvitationInterface({ team, layouts, onClose }: { team: Team; layouts: GeneratedLayout[]; onClose: () => void }) {
+function TeamInvitationInterface({ team, onClose }: { team: Team; onClose: () => void }) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("member");
   const [selectedLayout, setSelectedLayout] = useState<GeneratedLayout | null>(null);
@@ -87,6 +87,12 @@ function TeamInvitationInterface({ team, layouts, onClose }: { team: Team; layou
   // Fetch all users for selection
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["/api/users"]
+  });
+
+  // Query for all public layouts (not just user's own layouts)
+  const { data: publicLayouts = [] } = useQuery<GeneratedLayout[]>({
+    queryKey: ["/api/public-layouts"],
+    queryFn: () => apiRequest("GET", "/api/public-layouts?limit=100")
   });
 
   // Fetch layout versions when layout is selected
@@ -242,7 +248,7 @@ function TeamInvitationInterface({ team, layouts, onClose }: { team: Team; layou
             <SelectValue placeholder="Select layout (required)" />
           </SelectTrigger>
           <SelectContent>
-            {layouts.filter(layout => layout.isPublic).map((layout: GeneratedLayout) => {
+            {publicLayouts.map((layout: GeneratedLayout) => {
               // Format version display: v1.0 for original, v1.1, v1.2 etc for versions
               const versionDisplay = layout.parentLayoutId 
                 ? `v${layout.versionNumber || '1.1'}` 
@@ -1265,7 +1271,6 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                               </DialogHeader>
                               <TeamInvitationInterface 
                                 team={team} 
-                                layouts={layouts} 
                                 onClose={() => setInviteDialog(null)}
                               />
                             </DialogContent>
