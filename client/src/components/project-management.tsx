@@ -519,7 +519,10 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
     queryFn: async () => {
       const response = await apiRequest("GET", "/api/accepted-invitations");
       return response.json();
-    }
+    },
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
   // Get shared layouts from accepted invitations
@@ -552,7 +555,9 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
       }
       return layouts;
     },
-    enabled: sharedLayoutsFromTeams.length > 0
+    enabled: sharedLayoutsFromTeams.length > 0,
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: true
   });
 
   // Temporarily disable shared layouts query to prevent NaN error
@@ -560,7 +565,10 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
 
   // Add layouts query for version control
   const { data: layouts = [] } = useQuery<GeneratedLayout[]>({
-    queryKey: ["/api/layouts"]
+    queryKey: ["/api/layouts"],
+    staleTime: 0, // Always fetch fresh data
+    refetchOnMount: true,
+    refetchOnWindowFocus: true
   });
 
 
