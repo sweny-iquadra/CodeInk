@@ -352,7 +352,9 @@ export type Tag = typeof tags.$inferSelect;
 export type InsertLayoutTag = z.infer<typeof insertLayoutTagSchema>;
 export type LayoutTag = typeof layoutTags.$inferSelect;
 export type InsertTeam = z.infer<typeof insertTeamSchema>;
-export type Team = typeof teams.$inferSelect;
+export type Team = typeof teams.$inferSelect & {
+  memberCount?: number;
+};
 export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
 export type TeamMember = typeof teamMembers.$inferSelect;
 export type InsertTeamInvitation = z.infer<typeof insertTeamInvitationSchema>;

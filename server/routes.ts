@@ -698,7 +698,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/teams", authenticateToken, async (req, res) => {
     try {
       const teams = await storage.getUserTeams(req.user!.userId);
-      res.json(teams);
+      // Add member count to each team
+      const teamsWithCounts = await Promise.all(
+        teams.map(async (team) => {
+          const memberCount = await storage.getTeamMemberCount(team.id);
+          return { ...team, memberCount };
+        })
+      );
+      res.json(teamsWithCounts);
     } catch (error: unknown) {
       console.error("Error fetching teams:", error);
       res.status(500).json({ message: "Failed to fetch teams" });

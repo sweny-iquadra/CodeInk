@@ -76,6 +76,7 @@ export interface IStorage {
   addTeamMember(teamMember: InsertTeamMember): Promise<TeamMember>;
   removeTeamMember(teamId: number, userId: number): Promise<boolean>;
   getTeamMembers(teamId: number): Promise<TeamMember[]>;
+  getTeamMemberCount(teamId: number): Promise<number>;
   updateTeamMemberRole(teamId: number, userId: number, role: string): Promise<TeamMember | undefined>;
   
   // Team invitations
@@ -453,6 +454,16 @@ export class DatabaseStorage implements IStorage {
       .insert(teams)
       .values(insertTeam)
       .returning();
+    
+    // Automatically add the creator as an admin member
+    await db
+      .insert(teamMembers)
+      .values({
+        teamId: team.id,
+        userId: team.createdBy,
+        role: "admin"
+      });
+    
     return team;
   }
 
@@ -502,6 +513,14 @@ export class DatabaseStorage implements IStorage {
       .where(eq(teamMembers.teamId, teamId))
       .orderBy(teamMembers.joinedAt);
     return members;
+  }
+
+  async getTeamMemberCount(teamId: number): Promise<number> {
+    const result = await db
+      .select({ count: teamMembers.id })
+      .from(teamMembers)
+      .where(eq(teamMembers.teamId, teamId));
+    return result.length;
   }
 
   async updateTeamMemberRole(teamId: number, userId: number, role: string): Promise<TeamMember | undefined> {

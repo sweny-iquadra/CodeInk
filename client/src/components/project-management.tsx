@@ -1508,7 +1508,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                             </div>
                             <div className="flex items-center gap-2 shrink-0">
                               <Badge variant="secondary" className="text-xs">
-                                0 members
+                                {team.memberCount || 0} member{(team.memberCount || 0) !== 1 ? 's' : ''}
                               </Badge>
                               <Dialog open={inviteDialog === team.id} onOpenChange={(open) => setInviteDialog(open ? team.id : null)}>
                                 <DialogTrigger asChild>
