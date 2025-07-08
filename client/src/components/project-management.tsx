@@ -243,11 +243,18 @@ function TeamInvitationInterface({ team, layouts, onClose }: { team: Team; layou
             <SelectValue placeholder="Select layout (required)" />
           </SelectTrigger>
           <SelectContent>
-            {layouts.filter(layout => layout.isPublic).map((layout: GeneratedLayout) => (
-              <SelectItem key={layout.id} value={layout.id.toString()}>
-                {layout.title} {layout.versionNumber > 1 && `(v${layout.versionNumber})`}
-              </SelectItem>
-            ))}
+            {layouts.filter(layout => layout.isPublic).map((layout: GeneratedLayout) => {
+              // Format version display: v1.0 for original, v1.1, v1.2 etc for versions
+              const versionDisplay = layout.parentLayoutId 
+                ? `v${layout.versionNumber || '1.1'}` 
+                : 'v1.0';
+              
+              return (
+                <SelectItem key={layout.id} value={layout.id.toString()}>
+                  {layout.title} {versionDisplay}
+                </SelectItem>
+              );
+            })}
           </SelectContent>
         </Select>
       </div>
