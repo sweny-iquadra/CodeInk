@@ -9,6 +9,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
@@ -69,13 +71,14 @@ interface TeamInvitation {
 }
 
 // Team Invitation Interface Component
-function TeamInvitationInterface({ team, layouts }: { team: Team; layouts: GeneratedLayout[] }) {
+function TeamInvitationInterface({ team, layouts, onClose }: { team: Team; layouts: GeneratedLayout[]; onClose: () => void }) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("member");
   const [selectedLayout, setSelectedLayout] = useState<GeneratedLayout | null>(null);
   const [selectedVersion, setSelectedVersion] = useState<GeneratedLayout | null>(null);
   const [message, setMessage] = useState("");
   const [userSearch, setUserSearch] = useState("");
+  const [userComboOpen, setUserComboOpen] = useState(false);
   
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -117,6 +120,7 @@ function TeamInvitationInterface({ team, layouts }: { team: Team; layouts: Gener
       setSelectedVersion(null);
       setMessage("");
       setUserSearch("");
+      onClose(); // Auto-close the modal
     },
     onError: (error: any) => {
       toast({ 
@@ -136,11 +140,19 @@ function TeamInvitationInterface({ team, layouts }: { team: Team; layouts: Gener
       return;
     }
 
+    if (!selectedLayout) {
+      toast({ 
+        title: "Please select a layout", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
     const inviteData = {
       teamId: team.id,
       invitedUserId: selectedUser.id,
       role: selectedRole,
-      layoutId: selectedVersion?.id || (selectedLayout ? selectedLayout.id : undefined),
+      layoutId: selectedVersion?.id || selectedLayout.id,
       message: message.trim() || undefined
     };
 
@@ -150,38 +162,53 @@ function TeamInvitationInterface({ team, layouts }: { team: Team; layouts: Gener
   return (
     <div className="space-y-6">
       {/* User Selection */}
-      <div className="space-y-3">
-        <Label>Select User to Invite</Label>
-        <Input
-          placeholder="Search users by username or email..."
-          value={userSearch}
-          onChange={(e) => setUserSearch(e.target.value)}
-        />
-        <div className="max-h-40 overflow-y-auto border rounded-md">
-          {filteredUsers.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-4">No users found</p>
-          ) : (
-            filteredUsers.map((user: User) => user && (
-              <div
-                key={user.id}
-                className={`p-3 cursor-pointer hover:bg-muted/50 transition-colors ${
-                  selectedUser?.id === user.id ? "bg-muted" : ""
-                }`}
-                onClick={() => setSelectedUser(user)}
-              >
-                <div className="flex items-center justify-between">
-                  <div>
-                    <div className="font-medium text-sm">{user.username || 'Unknown'}</div>
-                    <div className="text-xs text-muted-foreground">{user.email || 'No email'}</div>
-                  </div>
-                  {selectedUser?.id === user.id && (
-                    <Check className="h-4 w-4 text-green-600" />
-                  )}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
+      <div className="space-y-2">
+        <Label>Select User to Invite *</Label>
+        <Popover open={userComboOpen} onOpenChange={setUserComboOpen}>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              role="combobox"
+              aria-expanded={userComboOpen}
+              className="w-full justify-between"
+            >
+              {selectedUser
+                ? `${selectedUser.username} (${selectedUser.email})`
+                : "Search and select user..."}
+              <ChevronRight className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-full p-0">
+            <Command>
+              <CommandInput placeholder="Search users by username or email..." />
+              <CommandEmpty>No users found.</CommandEmpty>
+              <CommandList>
+                <CommandGroup>
+                  {filteredUsers.map((user: User) => user && (
+                    <CommandItem
+                      key={user.id}
+                      value={`${user.username} ${user.email}`}
+                      onSelect={() => {
+                        setSelectedUser(user);
+                        setUserComboOpen(false);
+                      }}
+                    >
+                      <div className="flex items-center justify-between w-full">
+                        <div>
+                          <div className="font-medium text-sm">{user.username || 'Unknown'}</div>
+                          <div className="text-xs text-muted-foreground">{user.email || 'No email'}</div>
+                        </div>
+                        {selectedUser?.id === user.id && (
+                          <Check className="h-4 w-4 text-green-600" />
+                        )}
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              </CommandList>
+            </Command>
+          </PopoverContent>
+        </Popover>
       </div>
 
       {/* Role Selection */}
@@ -202,25 +229,19 @@ function TeamInvitationInterface({ team, layouts }: { team: Team; layouts: Gener
 
       {/* Layout Selection */}
       <div className="space-y-2">
-        <Label>Assign Specific Layout (Optional)</Label>
+        <Label>Assign Specific Layout *</Label>
         <Select 
-          value={selectedLayout?.id?.toString() || "none"} 
+          value={selectedLayout?.id?.toString() || ""} 
           onValueChange={(value) => {
-            if (value === "none") {
-              setSelectedLayout(null);
-              setSelectedVersion(null);
-            } else {
-              const layout = layouts.find(l => l.id.toString() === value);
-              setSelectedLayout(layout || null);
-              setSelectedVersion(null);
-            }
+            const layout = layouts.find(l => l.id.toString() === value);
+            setSelectedLayout(layout || null);
+            setSelectedVersion(null);
           }}
         >
           <SelectTrigger>
-            <SelectValue placeholder="Select layout (optional)" />
+            <SelectValue placeholder="Select layout (required)" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="none">No specific layout</SelectItem>
             {layouts.map((layout: GeneratedLayout) => (
               <SelectItem key={layout.id} value={layout.id.toString()}>
                 {layout.title}
@@ -291,7 +312,7 @@ function TeamInvitationInterface({ team, layouts }: { team: Team; layouts: Gener
       {/* Send Invitation Button */}
       <Button 
         onClick={handleSendInvitation}
-        disabled={!selectedUser || inviteUserMutation.isPending}
+        disabled={!selectedUser || !selectedLayout || inviteUserMutation.isPending}
         className="w-full"
       >
         {inviteUserMutation.isPending ? "Sending Invitation..." : "Send Invitation"}
@@ -398,6 +419,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
   const [categoryDialog, setCategoryDialog] = useState(false);
   const [tagDialog, setTagDialog] = useState(false);
   const [teamDialog, setTeamDialog] = useState(false);
+  const [inviteDialog, setInviteDialog] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
@@ -1189,7 +1211,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                           <Badge variant="secondary" className="text-xs">
                             0 members
                           </Badge>
-                          <Dialog>
+                          <Dialog open={inviteDialog === team.id} onOpenChange={(open) => setInviteDialog(open ? team.id : null)}>
                             <DialogTrigger asChild>
                               <Button size="sm" variant="outline">
                                 <UserPlus className="h-4 w-4" />
@@ -1202,7 +1224,11 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                                   Search and invite users to join your team with specific roles and layout permissions.
                                 </DialogDescription>
                               </DialogHeader>
-                              <TeamInvitationInterface team={team} layouts={layouts} />
+                              <TeamInvitationInterface 
+                                team={team} 
+                                layouts={layouts} 
+                                onClose={() => setInviteDialog(null)}
+                              />
                             </DialogContent>
                           </Dialog>
                         </div>
