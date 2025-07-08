@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -105,12 +105,30 @@ function TeamInvitationInterface({ team, onClose }: { team: Team; onClose: () =>
     enabled: !!selectedLayout?.id
   });
 
-  // Filter users based on search
-  const filteredUsers = users.filter(user => 
-    user && user.username && user.email &&
-    (user.username.toLowerCase().includes(userSearch.toLowerCase()) ||
-    user.email.toLowerCase().includes(userSearch.toLowerCase()))
-  );
+  // State for user search autocomplete
+  const [userSearchQuery, setUserSearchQuery] = useState("");
+
+  // Search users with autocomplete
+  const { data: searchResults = [] } = useQuery<User[]>({
+    queryKey: ["/api/users/search", userSearchQuery],
+    queryFn: async () => {
+      if (!userSearchQuery.trim()) return [];
+      const response = await apiRequest("GET", `/api/users/search?q=${encodeURIComponent(userSearchQuery)}`);
+      return response.json();
+    },
+    enabled: !!userSearchQuery.trim() && userSearchQuery.length > 1,
+    staleTime: 500, // Cache for 500ms
+  });
+
+  // Filter users based on search - use search results if searching, otherwise show all users
+  const filteredUsers = useMemo(() => {
+    if (userSearchQuery.trim() && searchResults.length >= 0) {
+      return searchResults;
+    }
+    return users.filter(user => 
+      user && user.username && user.email
+    );
+  }, [users, userSearchQuery, searchResults]);
 
   // Get categories and tags for selected layout
   const { data: categories = [] } = useQuery<Category[]>({
@@ -190,34 +208,41 @@ function TeamInvitationInterface({ team, onClose }: { team: Team; onClose: () =>
             </Button>
           </PopoverTrigger>
           <PopoverContent className="w-full p-0">
-            <Command>
-              <CommandInput placeholder="Search users by username or email..." />
-              <CommandEmpty>No users found.</CommandEmpty>
-              <CommandList>
-                <CommandGroup>
-                  {filteredUsers.map((user: User) => user && (
-                    <CommandItem
-                      key={user.id}
-                      value={`${user.username} ${user.email}`}
-                      onSelect={() => {
-                        setSelectedUser(user);
-                        setUserComboOpen(false);
-                      }}
-                    >
-                      <div className="flex items-center justify-between w-full">
-                        <div>
-                          <div className="font-medium text-sm">{user.username || 'Unknown'}</div>
-                          <div className="text-xs text-muted-foreground">{user.email || 'No email'}</div>
-                        </div>
-                        {selectedUser?.id === user.id && (
-                          <Check className="h-4 w-4 text-green-600" />
-                        )}
-                      </div>
-                    </CommandItem>
-                  ))}
-                </CommandGroup>
-              </CommandList>
-            </Command>
+            <div className="p-2">
+              <Input
+                placeholder="Type to search users..."
+                value={userSearchQuery}
+                onChange={(e) => setUserSearchQuery(e.target.value)}
+                className="mb-2"
+              />
+              {userSearchQuery.length > 0 && userSearchQuery.length < 2 && (
+                <div className="text-sm text-muted-foreground p-2">Type at least 2 characters to search</div>
+              )}
+              {userSearchQuery.length >= 2 && filteredUsers.length === 0 && (
+                <div className="text-sm text-muted-foreground p-2">No users found</div>
+              )}
+              <div className="max-h-60 overflow-y-auto">
+                {filteredUsers.map((user: User) => user && (
+                  <div
+                    key={user.id}
+                    className="flex items-center justify-between p-2 hover:bg-accent rounded cursor-pointer"
+                    onClick={() => {
+                      setSelectedUser(user);
+                      setUserComboOpen(false);
+                      setUserSearchQuery("");
+                    }}
+                  >
+                    <div>
+                      <div className="font-medium text-sm">{user.username || 'Unknown'}</div>
+                      <div className="text-xs text-muted-foreground">{user.email || 'No email'}</div>
+                    </div>
+                    {selectedUser?.id === user.id && (
+                      <Check className="h-4 w-4 text-green-600" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
           </PopoverContent>
         </Popover>
       </div>

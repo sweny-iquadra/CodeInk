@@ -752,6 +752,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Search users for autocomplete (for team invitations)
+  app.get("/api/users/search", authenticateToken, async (req, res) => {
+    try {
+      const { q: query } = req.query;
+      if (!query || typeof query !== 'string') {
+        return res.json([]);
+      }
+
+      const users = await storage.getAllUsers();
+      const searchTerm = query.toLowerCase();
+      
+      // Filter users based on username or email containing the search term
+      const filteredUsers = users
+        .filter(user => 
+          user.id !== req.user!.userId && // Exclude current user
+          (user.username.toLowerCase().includes(searchTerm) || 
+           user.email.toLowerCase().includes(searchTerm))
+        )
+        .slice(0, 5) // Limit to 5 results for performance
+        .map(user => ({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          createdAt: user.createdAt
+        }));
+
+      res.json(filteredUsers);
+    } catch (error: unknown) {
+      console.error("Error searching users:", error);
+      res.status(500).json({ message: "Failed to search users" });
+    }
+  });
+
   app.post("/api/teams/invite", authenticateToken, async (req, res) => {
     try {
       const validatedData = inviteTeamMemberSchema.parse(req.body);
