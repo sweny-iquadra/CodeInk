@@ -92,7 +92,10 @@ function TeamInvitationInterface({ team, onClose }: { team: Team; onClose: () =>
   // Query for all public layouts (not just user's own layouts)
   const { data: publicLayouts = [] } = useQuery<GeneratedLayout[]>({
     queryKey: ["/api/public-layouts"],
-    queryFn: () => apiRequest("GET", "/api/public-layouts?limit=100")
+    queryFn: async () => {
+      const response = await apiRequest("GET", "/api/public-layouts?limit=100");
+      return await response.json();
+    }
   });
 
   // Fetch layout versions when layout is selected
