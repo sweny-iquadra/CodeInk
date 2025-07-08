@@ -35,7 +35,8 @@ import {
   UserPlus,
   Mail,
   Check,
-  AlertCircle
+  AlertCircle,
+  RotateCcw
 } from "lucide-react";
 import type { 
   Category, 
@@ -327,9 +328,13 @@ function TeamInvitations() {
   const queryClient = useQueryClient();
 
   // Fetch user's pending invitations
-  const { data: invitations = [] } = useQuery<TeamInvitation[]>({
-    queryKey: ["/api/invitations"]
+  const { data: invitations = [], isLoading, error, refetch } = useQuery<TeamInvitation[]>({
+    queryKey: ["/api/invitations"],
+    refetchInterval: 5000, // Refetch every 5 seconds
+    refetchOnWindowFocus: true
   });
+
+  // Debug logging removed for production
 
   const respondToInvitationMutation = useMutation({
     mutationFn: ({ invitationId, status }: { invitationId: number; status: string }) =>
@@ -353,6 +358,26 @@ function TeamInvitations() {
     respondToInvitationMutation.mutate({ invitationId, status });
   };
 
+  if (isLoading) {
+    return (
+      <div className="text-center py-6">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary mx-auto"></div>
+        <p className="mt-2 text-sm text-muted-foreground">Loading invitations...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="text-center py-6">
+        <p className="text-sm text-red-500 mb-2">Failed to load invitations</p>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+
   if (invitations.length === 0) {
     return (
       <div className="text-center py-6 text-muted-foreground">
@@ -363,8 +388,22 @@ function TeamInvitations() {
   }
 
   return (
-    <div className="space-y-3">
-      {invitations.map((invitation: TeamInvitation) => (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h4 className="text-sm font-medium">Pending Invitations</h4>
+          <p className="text-xs text-muted-foreground">
+            {invitations.length} invitation{invitations.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => refetch()}>
+          <RotateCcw className="h-4 w-4 mr-1" />
+          Refresh
+        </Button>
+      </div>
+      
+      <div className="space-y-3">
+        {invitations.map((invitation: TeamInvitation) => (
         <Card key={invitation.id} className="p-4">
           <div className="flex items-start justify-between">
             <div className="flex-1">
@@ -402,6 +441,7 @@ function TeamInvitations() {
           </div>
         </Card>
       ))}
+      </div>
     </div>
   );
 }
