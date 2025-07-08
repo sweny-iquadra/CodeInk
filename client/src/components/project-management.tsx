@@ -251,7 +251,12 @@ function TeamInvitationInterface({ team, onClose }: { team: Team; onClose: () =>
             <SelectValue placeholder="Select layout (required)" />
           </SelectTrigger>
           <SelectContent>
-            {publicLayouts.map((layout: GeneratedLayout) => {
+            {publicLayouts
+              .filter((layout, index, arr) => {
+                // Keep only unique layouts by title and id combination
+                return arr.findIndex(l => l.id === layout.id) === index;
+              })
+              .map((layout: GeneratedLayout) => {
               // Format version display: v1.0 for original, v1.1, v1.2 etc for versions
               const versionDisplay = layout.parentLayoutId 
                 ? `v${layout.versionNumber || '1.1'}` 
