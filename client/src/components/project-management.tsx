@@ -1183,14 +1183,20 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                     
                     return (
                       <SelectItem key={layout.id} value={layout.id.toString()}>
-                        <div className="flex items-center gap-2">
-                          <span>{layout.title}</span>
-                          {isShared && (
-                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                              <span>{roleIcon}</span>
-                              <span>({layout.sharedRole} • {layout.sharedTeamName})</span>
-                            </div>
-                          )}
+                        <div className="flex items-center justify-between gap-2 w-full">
+                          <div className="flex items-center gap-2">
+                            <span>{layout.title}</span>
+                            <span className="text-xs text-muted-foreground">#{layout.id}</span>
+                            {isShared && (
+                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <span>{roleIcon}</span>
+                                <span>({layout.sharedRole} • {layout.sharedTeamName})</span>
+                              </div>
+                            )}
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(layout.createdAt).toLocaleDateString()}
+                          </span>
                         </div>
                       </SelectItem>
                     );
