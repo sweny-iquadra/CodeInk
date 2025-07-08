@@ -31,6 +31,7 @@ export default function Home() {
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [outputTab, setOutputTab] = useState("code");
   const [selectedLayoutForManagement, setSelectedLayoutForManagement] = useState<GeneratedLayout | undefined>(undefined);
+  const [projectManagementTab, setProjectManagementTab] = useState("organization");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -353,36 +354,40 @@ export default function Home() {
           </TabsContent>
           
           <TabsContent value="manage">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              <div className="lg:col-span-4">
+            <div className={`grid ${projectManagementTab === "collaborate" ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-12"} gap-8`}>
+              <div className={projectManagementTab === "collaborate" ? "w-full" : "lg:col-span-4"}>
                 <ProjectManagement 
                   onSelectLayout={handleSelectLayoutForManagement}
                   currentLayout={selectedLayoutForManagement}
+                  defaultTab={projectManagementTab}
+                  onTabChange={setProjectManagementTab}
                 />
               </div>
               
-              <div className="lg:col-span-8">
-                <OutputPanel 
-                  generatedCode={selectedLayoutForManagement?.generatedCode || currentCode}
-                  title={selectedLayoutForManagement?.title || currentTitle}
-                  isReady={!!(selectedLayoutForManagement || isReady)}
-                  onLayoutImproved={handleLayoutImproved}
-                  activeTab={outputTab}
-                  onTabChange={setOutputTab}
-                  currentLayoutId={selectedLayoutForManagement?.id || currentLayoutId}
-                  userRole={selectedLayoutForManagement?.sharedRole}
-                  onCodeChange={(code) => {
-                    if (selectedLayoutForManagement) {
-                      setSelectedLayoutForManagement({
-                        ...selectedLayoutForManagement,
-                        generatedCode: code
-                      });
-                    } else {
-                      setCurrentCode(code);
-                    }
-                  }}
-                />
-              </div>
+              {projectManagementTab !== "collaborate" && (
+                <div className="lg:col-span-8">
+                  <OutputPanel 
+                    generatedCode={selectedLayoutForManagement?.generatedCode || currentCode}
+                    title={selectedLayoutForManagement?.title || currentTitle}
+                    isReady={!!(selectedLayoutForManagement || isReady)}
+                    onLayoutImproved={handleLayoutImproved}
+                    activeTab={outputTab}
+                    onTabChange={setOutputTab}
+                    currentLayoutId={selectedLayoutForManagement?.id || currentLayoutId}
+                    userRole={selectedLayoutForManagement?.sharedRole}
+                    onCodeChange={(code) => {
+                      if (selectedLayoutForManagement) {
+                        setSelectedLayoutForManagement({
+                          ...selectedLayoutForManagement,
+                          generatedCode: code
+                        });
+                      } else {
+                        setCurrentCode(code);
+                      }
+                    }}
+                  />
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
