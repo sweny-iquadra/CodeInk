@@ -513,38 +513,29 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
     staleTime: 5000
   });
 
-  // Query for team members to get user's permissions and shared layouts
-  const { data: teamMembers = [] } = useQuery({
-    queryKey: ["/api/team-members"],
+  // Query for accepted invitations to get shared layouts with permissions
+  const { data: acceptedInvitations = [] } = useQuery({
+    queryKey: ["/api/accepted-invitations"],
     queryFn: async () => {
-      // Get all teams user is member of
-      const teamsResponse = await apiRequest("GET", "/api/teams");
-      const userTeams = await teamsResponse.json();
+      // Get all accepted invitations for the current user
+      const invitationsResponse = await apiRequest("GET", "/api/invitations");
+      const allInvitations = await invitationsResponse.json();
       
-      // Get members for each team to find user's role and shared layouts
-      const allMembers = [];
-      for (const team of userTeams) {
-        try {
-          const membersResponse = await apiRequest("GET", `/api/teams/${team.id}/members`);
-          const members = await membersResponse.json();
-          allMembers.push(...members.map(member => ({ ...member, teamId: team.id, teamName: team.name })));
-        } catch (error) {
-          console.log(`Could not fetch members for team ${team.id}`);
-        }
-      }
-      return allMembers;
+      // Filter for accepted invitations with layout assignments
+      return allInvitations.filter(invitation => 
+        invitation.status === 'accepted' && invitation.layoutId
+      );
     }
   });
 
-  // Get shared layouts from team invitations that were accepted
-  const sharedLayoutsFromTeams = teamMembers
-    .filter(member => member.layoutId) // Only members with assigned layouts
-    .map(member => ({
-      id: member.layoutId,
-      role: member.role,
-      teamName: member.teamName,
-      teamId: member.teamId
-    }));
+  // Get shared layouts from accepted invitations
+  const sharedLayoutsFromTeams = acceptedInvitations.map(invitation => ({
+    id: invitation.layoutId,
+    role: invitation.role,
+    teamName: invitation.teamName,
+    teamId: invitation.teamId,
+    invitationId: invitation.id
+  }));
 
   // Query for actual layout data for shared layouts
   const { data: teamSharedLayoutsData = [] } = useQuery({
