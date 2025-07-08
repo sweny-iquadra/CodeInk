@@ -361,9 +361,20 @@ function TeamInvitations({ onAcceptInvitation }: { onAcceptInvitation?: (layoutI
       queryClient.invalidateQueries({ queryKey: ["/api/invitations"] });
       queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
       
-      // If invitation was accepted, trigger tab switch and layout binding
-      if (variables.status === "accepted" && onAcceptInvitation) {
-        onAcceptInvitation(invitation.layoutId);
+      // If invitation was accepted, automatically switch to versions tab and select the layout
+      if (variables.status === "accepted") {
+        // Switch to versions tab immediately
+        setActiveTab("versions");
+        
+        // Auto-select the layout from the invitation
+        const acceptedInvitation = invitation as any;
+        if (acceptedInvitation.layoutId) {
+          setSelectedLayout(acceptedInvitation.layoutId);
+        }
+        
+        // Refresh data to get the latest shared layouts
+        queryClient.invalidateQueries({ queryKey: ["/api/layouts"] });
+        queryClient.invalidateQueries({ queryKey: ["/api/accepted-invitations"] });
       }
     },
     onError: (error: any) => {
@@ -606,6 +617,16 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
     !layout.title.startsWith("Improved:") &&
     arr.findIndex(l => l.id === layout.id) === index // Remove duplicates
   );
+
+  // Effect to auto-select layout in output panel when selectedLayout changes
+  useEffect(() => {
+    if (selectedLayout && onSelectLayout) {
+      const layout = uniqueLayouts.find(l => l.id === parseInt(selectedLayout));
+      if (layout) {
+        onSelectLayout(layout);
+      }
+    }
+  }, [selectedLayout, uniqueLayouts, onSelectLayout]);
 
   // Query for layouts by category
   const { data: categoryLayouts = [] } = useQuery<GeneratedLayout[]>({
@@ -1199,30 +1220,14 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                 </SelectTrigger>
                 <SelectContent>
                   {uniqueLayouts.map((layout: GeneratedLayout) => {
-                    const isShared = layout.sharedRole;
-                    const roleIcon = isShared ? (
-                      layout.sharedRole === 'viewer' ? '👁️' :
-                      layout.sharedRole === 'editor' ? '✏️' :
-                      layout.sharedRole === 'admin' ? '⚡' : '👥'
-                    ) : '';
+                    // Determine version display
+                    const versionDisplay = layout.parentLayoutId 
+                      ? `v${layout.versionNumber || '1.1'}` 
+                      : 'v1.0';
                     
                     return (
                       <SelectItem key={layout.id} value={layout.id.toString()}>
-                        <div className="flex items-center justify-between gap-2 w-full">
-                          <div className="flex items-center gap-2">
-                            <span>{layout.title}</span>
-                            <span className="text-xs text-muted-foreground">#{layout.id}</span>
-                            {isShared && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <span>{roleIcon}</span>
-                                <span>({layout.sharedRole} • {layout.sharedTeamName})</span>
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(layout.createdAt).toLocaleDateString()}
-                          </span>
-                        </div>
+                        {layout.title} {versionDisplay}
                       </SelectItem>
                     );
                   })}
