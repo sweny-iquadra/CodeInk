@@ -588,6 +588,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSharedLayouts(userId: number): Promise<SharedLayout[]> {
+    // Validate userId to prevent NaN errors
+    if (!userId || isNaN(userId) || userId <= 0) {
+      console.error("Invalid userId provided to getSharedLayouts:", userId);
+      return [];
+    }
+    
     const shared = await db
       .select()
       .from(sharedLayouts)

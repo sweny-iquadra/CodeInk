@@ -243,9 +243,9 @@ function TeamInvitationInterface({ team, layouts, onClose }: { team: Team; layou
             <SelectValue placeholder="Select layout (required)" />
           </SelectTrigger>
           <SelectContent>
-            {layouts.map((layout: GeneratedLayout) => (
+            {layouts.filter(layout => layout.isPublic).map((layout: GeneratedLayout) => (
               <SelectItem key={layout.id} value={layout.id.toString()}>
-                {layout.title}
+                {layout.title} {layout.versionNumber > 1 && `(v${layout.versionNumber})`}
               </SelectItem>
             ))}
           </SelectContent>
@@ -253,7 +253,7 @@ function TeamInvitationInterface({ team, layouts, onClose }: { team: Team; layou
       </div>
 
       {/* Version Selection */}
-      {selectedLayout && layoutVersions.length > 0 && (
+      {selectedLayout && (
         <div className="space-y-2">
           <Label>Select Version</Label>
           <Select 
@@ -277,6 +277,7 @@ function TeamInvitationInterface({ team, layouts, onClose }: { team: Team; layou
               {layoutVersions.map((version: GeneratedLayout) => (
                 <SelectItem key={version.id} value={version.id.toString()}>
                   v{version.versionNumber} - {version.title}
+                  {version.changesDescription && ` (${version.changesDescription})`}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -522,9 +523,8 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
     staleTime: 5000
   });
 
-  const { data: sharedLayouts = [] } = useQuery<SharedLayout[]>({
-    queryKey: ["/api/layouts/shared"]
-  });
+  // Temporarily disable shared layouts query to prevent NaN error
+  const sharedLayouts: SharedLayout[] = [];
 
   // Add layouts query for version control
   const { data: layouts = [] } = useQuery<GeneratedLayout[]>({
