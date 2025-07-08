@@ -76,6 +76,7 @@ function TeamInvitationInterface({ team, onClose }: { team: Team; onClose: () =>
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("member");
   const [selectedLayout, setSelectedLayout] = useState<GeneratedLayout | null>(null);
+  const [selectedVersion, setSelectedVersion] = useState<GeneratedLayout | null>(null);
 
   const [message, setMessage] = useState("");
   const [userSearch, setUserSearch] = useState("");
