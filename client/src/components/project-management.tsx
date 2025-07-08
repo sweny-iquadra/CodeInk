@@ -513,6 +513,63 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
     staleTime: 5000
   });
 
+  // Query for team members to get user's permissions and shared layouts
+  const { data: teamMembers = [] } = useQuery({
+    queryKey: ["/api/team-members"],
+    queryFn: async () => {
+      // Get all teams user is member of
+      const teamsResponse = await apiRequest("GET", "/api/teams");
+      const userTeams = await teamsResponse.json();
+      
+      // Get members for each team to find user's role and shared layouts
+      const allMembers = [];
+      for (const team of userTeams) {
+        try {
+          const membersResponse = await apiRequest("GET", `/api/teams/${team.id}/members`);
+          const members = await membersResponse.json();
+          allMembers.push(...members.map(member => ({ ...member, teamId: team.id, teamName: team.name })));
+        } catch (error) {
+          console.log(`Could not fetch members for team ${team.id}`);
+        }
+      }
+      return allMembers;
+    }
+  });
+
+  // Get shared layouts from team invitations that were accepted
+  const sharedLayoutsFromTeams = teamMembers
+    .filter(member => member.layoutId) // Only members with assigned layouts
+    .map(member => ({
+      id: member.layoutId,
+      role: member.role,
+      teamName: member.teamName,
+      teamId: member.teamId
+    }));
+
+  // Query for actual layout data for shared layouts
+  const { data: teamSharedLayoutsData = [] } = useQuery({
+    queryKey: ["/api/shared-layouts", sharedLayoutsFromTeams],
+    queryFn: async () => {
+      const layouts = [];
+      for (const sharedLayout of sharedLayoutsFromTeams) {
+        try {
+          const layoutResponse = await apiRequest("GET", `/api/layouts/${sharedLayout.id}`);
+          const layout = await layoutResponse.json();
+          layouts.push({
+            ...layout,
+            sharedRole: sharedLayout.role,
+            sharedTeamName: sharedLayout.teamName,
+            sharedTeamId: sharedLayout.teamId
+          });
+        } catch (error) {
+          console.log(`Could not fetch shared layout ${sharedLayout.id}`);
+        }
+      }
+      return layouts;
+    },
+    enabled: sharedLayoutsFromTeams.length > 0
+  });
+
   // Temporarily disable shared layouts query to prevent NaN error
   const sharedLayouts: SharedLayout[] = [];
 
@@ -522,7 +579,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
   });
 
   // Get base layouts for dropdown - include own layouts and team shared layouts
-  const uniqueLayouts = [...layouts, ...teamSharedLayouts].filter((layout: GeneratedLayout, index, arr) => 
+  const uniqueLayouts = [...layouts, ...teamSharedLayouts, ...teamSharedLayoutsData].filter((layout: GeneratedLayout, index, arr) => 
     !layout.parentLayoutId && 
     !layout.title.startsWith("Improved:") &&
     arr.findIndex(l => l.id === layout.id) === index // Remove duplicates
@@ -1119,11 +1176,28 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                   <SelectValue placeholder="Choose layout..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {uniqueLayouts.map((layout: GeneratedLayout) => (
-                    <SelectItem key={layout.id} value={layout.id.toString()}>
-                      {layout.title}
-                    </SelectItem>
-                  ))}
+                  {uniqueLayouts.map((layout: GeneratedLayout) => {
+                    const isShared = layout.sharedRole;
+                    const roleIcon = isShared ? (
+                      layout.sharedRole === 'viewer' ? '👁️' :
+                      layout.sharedRole === 'editor' ? '✏️' :
+                      layout.sharedRole === 'admin' ? '⚡' : '👥'
+                    ) : '';
+                    
+                    return (
+                      <SelectItem key={layout.id} value={layout.id.toString()}>
+                        <div className="flex items-center gap-2">
+                          <span>{layout.title}</span>
+                          {isShared && (
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                              <span>{roleIcon}</span>
+                              <span>({layout.sharedRole} • {layout.sharedTeamName})</span>
+                            </div>
+                          )}
+                        </div>
+                      </SelectItem>
+                    );
+                  })}
                 </SelectContent>
               </Select>
             </div>
@@ -1134,6 +1208,19 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                   <CardTitle className="text-sm flex items-center gap-2">
                     <History className="h-4 w-4" />
                     Version History
+                    {(() => {
+                      const currentLayout = uniqueLayouts.find(l => l.id === parseInt(selectedLayout));
+                      if (currentLayout?.sharedRole) {
+                        return (
+                          <Badge variant="outline" className="ml-auto text-xs">
+                            {currentLayout.sharedRole === 'viewer' && '👁️ View Only'}
+                            {currentLayout.sharedRole === 'editor' && '✏️ Can Edit'}
+                            {currentLayout.sharedRole === 'admin' && '⚡ Full Access'}
+                          </Badge>
+                        );
+                      }
+                      return null;
+                    })()}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
