@@ -6,6 +6,7 @@ import {
   layoutTags,
   teams,
   teamMembers,
+  teamInvitations,
   sharedLayouts,
   layoutComments,
   type User, 
@@ -22,6 +23,8 @@ import {
   type InsertTeam,
   type TeamMember,
   type InsertTeamMember,
+  type TeamInvitation,
+  type InsertTeamInvitation,
   type SharedLayout,
   type InsertSharedLayout,
   type LayoutComment,
@@ -73,6 +76,13 @@ export interface IStorage {
   removeTeamMember(teamId: number, userId: number): Promise<boolean>;
   getTeamMembers(teamId: number): Promise<TeamMember[]>;
   updateTeamMemberRole(teamId: number, userId: number, role: string): Promise<TeamMember | undefined>;
+  
+  // Team invitations
+  createTeamInvitation(invitation: InsertTeamInvitation): Promise<TeamInvitation>;
+  getUserInvitations(userId: number): Promise<TeamInvitation[]>;
+  respondToInvitation(invitationId: number, status: string, userId: number): Promise<TeamInvitation | undefined>;
+  getTeamInvitations(teamId: number): Promise<TeamInvitation[]>;
+  getAllUsers(): Promise<User[]>; // For user search during invitations
   
   // Sharing and collaboration
   shareLayout(share: InsertSharedLayout): Promise<SharedLayout>;
@@ -487,6 +497,68 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)))
       .returning();
     return member || undefined;
+  }
+
+  // Team invitation methods
+  async createTeamInvitation(insertInvitation: InsertTeamInvitation): Promise<TeamInvitation> {
+    const [invitation] = await db
+      .insert(teamInvitations)
+      .values(insertInvitation)
+      .returning();
+    return invitation;
+  }
+
+  async getUserInvitations(userId: number): Promise<TeamInvitation[]> {
+    const invitations = await db
+      .select()
+      .from(teamInvitations)
+      .where(and(eq(teamInvitations.invitedUserId, userId), eq(teamInvitations.status, "pending")))
+      .orderBy(desc(teamInvitations.createdAt));
+    return invitations;
+  }
+
+  async respondToInvitation(invitationId: number, status: string, userId: number): Promise<TeamInvitation | undefined> {
+    const [invitation] = await db
+      .update(teamInvitations)
+      .set({ 
+        status, 
+        respondedAt: new Date() 
+      })
+      .where(and(eq(teamInvitations.id, invitationId), eq(teamInvitations.invitedUserId, userId)))
+      .returning();
+    
+    // If accepted, add user to team
+    if (status === "accepted" && invitation) {
+      await this.addTeamMember({
+        teamId: invitation.teamId,
+        userId: invitation.invitedUserId,
+        role: invitation.role
+      });
+    }
+    
+    return invitation || undefined;
+  }
+
+  async getTeamInvitations(teamId: number): Promise<TeamInvitation[]> {
+    const invitations = await db
+      .select()
+      .from(teamInvitations)
+      .where(eq(teamInvitations.teamId, teamId))
+      .orderBy(desc(teamInvitations.createdAt));
+    return invitations;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    const allUsers = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        createdAt: users.createdAt
+      })
+      .from(users)
+      .orderBy(users.username);
+    return allUsers;
   }
 
   // Sharing and collaboration methods

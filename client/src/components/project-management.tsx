@@ -29,7 +29,11 @@ import {
   Clock,
   Filter,
   X,
-  ChevronRight
+  ChevronRight,
+  UserPlus,
+  Mail,
+  Check,
+  AlertCircle
 } from "lucide-react";
 import type { 
   Category, 
@@ -42,6 +46,334 @@ import type {
   CreateTagRequest,
   CreateTeamRequest
 } from "@shared/schema";
+
+// Team invitation types
+interface User {
+  id: number;
+  username: string;
+  email: string;
+  createdAt: string;
+}
+
+interface TeamInvitation {
+  id: number;
+  teamId: number;
+  invitedUserId: number;
+  invitedBy: number;
+  role: string;
+  status: string;
+  layoutId?: number;
+  message?: string;
+  createdAt: string;
+  respondedAt?: string;
+}
+
+// Team Invitation Interface Component
+function TeamInvitationInterface({ team, layouts }: { team: Team; layouts: GeneratedLayout[] }) {
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedRole, setSelectedRole] = useState<string>("member");
+  const [selectedLayout, setSelectedLayout] = useState<GeneratedLayout | null>(null);
+  const [selectedVersion, setSelectedVersion] = useState<GeneratedLayout | null>(null);
+  const [message, setMessage] = useState("");
+  const [userSearch, setUserSearch] = useState("");
+  
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch all users for selection
+  const { data: users = [] } = useQuery<User[]>({
+    queryKey: ["/api/users"]
+  });
+
+  // Fetch layout versions when layout is selected
+  const { data: layoutVersions = [] } = useQuery<GeneratedLayout[]>({
+    queryKey: [`/api/layouts/${selectedLayout?.id}/versions`],
+    enabled: !!selectedLayout?.id
+  });
+
+  // Filter users based on search
+  const filteredUsers = users.filter(user => 
+    user.username.toLowerCase().includes(userSearch.toLowerCase()) ||
+    user.email.toLowerCase().includes(userSearch.toLowerCase())
+  );
+
+  // Get categories and tags for selected layout
+  const { data: categories = [] } = useQuery<Category[]>({
+    queryKey: ["/api/categories"]
+  });
+  
+  const { data: tags = [] } = useQuery<TagType[]>({
+    queryKey: ["/api/tags"]
+  });
+
+  const inviteUserMutation = useMutation({
+    mutationFn: (inviteData: any) => apiRequest("POST", "/api/teams/invite", inviteData),
+    onSuccess: () => {
+      toast({ title: "Invitation sent successfully!" });
+      setSelectedUser(null);
+      setSelectedRole("member");
+      setSelectedLayout(null);
+      setSelectedVersion(null);
+      setMessage("");
+      setUserSearch("");
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to send invitation", 
+        description: error.message, 
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const handleSendInvitation = () => {
+    if (!selectedUser) {
+      toast({ 
+        title: "Please select a user", 
+        variant: "destructive" 
+      });
+      return;
+    }
+
+    const inviteData = {
+      teamId: team.id,
+      invitedUserId: selectedUser.id,
+      role: selectedRole,
+      layoutId: selectedVersion?.id || selectedLayout?.id,
+      message: message.trim() || undefined
+    };
+
+    inviteUserMutation.mutate(inviteData);
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* User Selection */}
+      <div className="space-y-3">
+        <Label>Select User to Invite</Label>
+        <Input
+          placeholder="Search users by username or email..."
+          value={userSearch}
+          onChange={(e) => setUserSearch(e.target.value)}
+        />
+        <div className="max-h-40 overflow-y-auto border rounded-md">
+          {filteredUsers.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">No users found</p>
+          ) : (
+            filteredUsers.map((user: User) => (
+              <div
+                key={user.id}
+                className={`p-3 cursor-pointer hover:bg-muted/50 transition-colors ${
+                  selectedUser?.id === user.id ? "bg-muted" : ""
+                }`}
+                onClick={() => setSelectedUser(user)}
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-sm">{user.username}</div>
+                    <div className="text-xs text-muted-foreground">{user.email}</div>
+                  </div>
+                  {selectedUser?.id === user.id && (
+                    <Check className="h-4 w-4 text-green-600" />
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Role Selection */}
+      <div className="space-y-2">
+        <Label>Assign Role</Label>
+        <Select value={selectedRole} onValueChange={setSelectedRole}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="admin">Admin - Full control</SelectItem>
+            <SelectItem value="editor">Editor - Can create/edit layouts</SelectItem>
+            <SelectItem value="viewer">Viewer - View layouts and comment</SelectItem>
+            <SelectItem value="member">Member - Basic collaboration</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Layout Selection */}
+      <div className="space-y-2">
+        <Label>Assign Specific Layout (Optional)</Label>
+        <Select 
+          value={selectedLayout?.id?.toString() || ""} 
+          onValueChange={(value) => {
+            const layout = layouts.find(l => l.id.toString() === value);
+            setSelectedLayout(layout || null);
+            setSelectedVersion(null);
+          }}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Select layout (optional)" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">No specific layout</SelectItem>
+            {layouts.map((layout: GeneratedLayout) => (
+              <SelectItem key={layout.id} value={layout.id.toString()}>
+                {layout.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {/* Version Selection */}
+      {selectedLayout && layoutVersions.length > 0 && (
+        <div className="space-y-2">
+          <Label>Select Version</Label>
+          <Select 
+            value={selectedVersion?.id?.toString() || ""} 
+            onValueChange={(value) => {
+              const version = layoutVersions.find(v => v.id.toString() === value);
+              setSelectedVersion(version || null);
+            }}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select version" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={selectedLayout.id.toString()}>
+                Original - {selectedLayout.title}
+              </SelectItem>
+              {layoutVersions.map((version: GeneratedLayout) => (
+                <SelectItem key={version.id} value={version.id.toString()}>
+                  v{version.versionNumber} - {version.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {/* Auto-bind Categories and Tags Info */}
+      {(selectedVersion || selectedLayout) && (
+        <div className="p-3 bg-muted/30 rounded-md">
+          <div className="text-sm font-medium mb-2">Layout Details:</div>
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <div>Title: {(selectedVersion || selectedLayout)?.title}</div>
+            <div>Description: {(selectedVersion || selectedLayout)?.description || "No description"}</div>
+            {(selectedVersion || selectedLayout)?.categoryId && (
+              <div>Category: {categories.find(c => c.id === (selectedVersion || selectedLayout)?.categoryId)?.name || "Unknown"}</div>
+            )}
+            <div>Categories and tags will be automatically available to the team member.</div>
+          </div>
+        </div>
+      )}
+
+      {/* Message */}
+      <div className="space-y-2">
+        <Label>Message (Optional)</Label>
+        <Textarea
+          placeholder="Add a personal message for the invitation..."
+          value={message}
+          onChange={(e) => setMessage(e.target.value)}
+          rows={3}
+        />
+      </div>
+
+      {/* Send Invitation Button */}
+      <Button 
+        onClick={handleSendInvitation}
+        disabled={!selectedUser || inviteUserMutation.isPending}
+        className="w-full"
+      >
+        {inviteUserMutation.isPending ? "Sending Invitation..." : "Send Invitation"}
+      </Button>
+    </div>
+  );
+}
+
+// Team Invitations Component
+function TeamInvitations() {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch user's pending invitations
+  const { data: invitations = [] } = useQuery<TeamInvitation[]>({
+    queryKey: ["/api/invitations"]
+  });
+
+  const respondToInvitationMutation = useMutation({
+    mutationFn: ({ invitationId, status }: { invitationId: number; status: string }) =>
+      apiRequest("POST", `/api/invitations/${invitationId}/respond`, { status }),
+    onSuccess: (_, variables) => {
+      const action = variables.status === "accepted" ? "accepted" : "declined";
+      toast({ title: `Invitation ${action} successfully!` });
+      queryClient.invalidateQueries({ queryKey: ["/api/invitations"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/teams"] });
+    },
+    onError: (error: any) => {
+      toast({ 
+        title: "Failed to respond to invitation", 
+        description: error.message, 
+        variant: "destructive" 
+      });
+    }
+  });
+
+  const handleResponse = (invitationId: number, status: string) => {
+    respondToInvitationMutation.mutate({ invitationId, status });
+  };
+
+  if (invitations.length === 0) {
+    return (
+      <div className="text-center py-6 text-muted-foreground">
+        <Mail className="h-6 w-6 mx-auto mb-2 opacity-50" />
+        <p className="text-sm">No pending invitations</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {invitations.map((invitation: TeamInvitation) => (
+        <Card key={invitation.id} className="p-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="font-medium text-sm">Team Invitation</div>
+                <Badge variant="outline" className="text-xs">{invitation.role}</Badge>
+              </div>
+              {invitation.message && (
+                <p className="text-sm text-muted-foreground mb-2">"{invitation.message}"</p>
+              )}
+              <div className="text-xs text-muted-foreground">
+                Invited {new Date(invitation.createdAt).toLocaleDateString()}
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleResponse(invitation.id, "accepted")}
+                disabled={respondToInvitationMutation.isPending}
+                className="text-green-600 border-green-600 hover:bg-green-50"
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => handleResponse(invitation.id, "rejected")}
+                disabled={respondToInvitationMutation.isPending}
+                className="text-red-600 border-red-600 hover:bg-red-50"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </Card>
+      ))}
+    </div>
+  );
+}
 
 interface ProjectManagementProps {
   onSelectLayout: (layout: GeneratedLayout) => void;
@@ -759,40 +1091,42 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
           </div>
         </TabsContent>
 
-        <TabsContent value="collaborate" className="p-4">
+        <TabsContent value="collaborate" className="p-4 space-y-4">
+          {/* Teams Management Section */}
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                Teams
+                My Teams
               </CardTitle>
               <Dialog open={teamDialog} onOpenChange={setTeamDialog}>
                 <DialogTrigger asChild>
                   <Button size="sm" variant="outline">
                     <Plus className="h-4 w-4" />
+                    Create Team
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
-                    <DialogTitle>Create Team</DialogTitle>
+                    <DialogTitle>Create New Team</DialogTitle>
                   </DialogHeader>
                   <div className="space-y-4">
                     <div>
-                      <Label htmlFor="team-name">Name</Label>
+                      <Label htmlFor="team-name">Team Name</Label>
                       <Input
                         id="team-name"
                         value={teamForm.name}
                         onChange={(e) => setTeamForm(prev => ({ ...prev, name: e.target.value }))}
-                        placeholder="e.g., Design Team"
+                        placeholder="e.g., Design Team, Marketing Team"
                       />
                     </div>
                     <div>
-                      <Label htmlFor="team-description">Description</Label>
+                      <Label htmlFor="team-description">Description (Optional)</Label>
                       <Textarea
                         id="team-description"
                         value={teamForm.description}
                         onChange={(e) => setTeamForm(prev => ({ ...prev, description: e.target.value }))}
-                        placeholder="Optional description"
+                        placeholder="Describe the team's purpose and goals"
                       />
                     </div>
                     <Button 
@@ -800,35 +1134,76 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
                       disabled={!teamForm.name || createTeamMutation.isPending}
                       className="w-full"
                     >
-                      Create Team
+                      {createTeamMutation.isPending ? "Creating..." : "Create Team"}
                     </Button>
                   </div>
                 </DialogContent>
               </Dialog>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                {teams.map((team: Team) => (
-                  <div
-                    key={team.id}
-                    className="flex items-center justify-between p-2 rounded border"
-                  >
-                    <div>
-                      <div className="font-medium text-sm">{team.name}</div>
-                      <div className="text-xs text-muted-foreground">{team.description}</div>
-                    </div>
-                    <Badge variant="secondary" className="text-xs">
-                      {/* Member count would come from separate query */}
-                      0 members
-                    </Badge>
+              <div className="space-y-3">
+                {teams.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No teams yet. Create your first team to start collaborating!</p>
                   </div>
-                ))}
+                ) : (
+                  teams.map((team: Team) => (
+                    <Card key={team.id} className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h3 className="font-medium text-sm">{team.name}</h3>
+                            <Badge variant="outline" className="text-xs">Admin</Badge>
+                          </div>
+                          {team.description && (
+                            <p className="text-xs text-muted-foreground mb-2">{team.description}</p>
+                          )}
+                          <div className="text-xs text-muted-foreground">
+                            Created {new Date(team.createdAt).toLocaleDateString()}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge variant="secondary" className="text-xs">
+                            0 members
+                          </Badge>
+                          <Dialog>
+                            <DialogTrigger asChild>
+                              <Button size="sm" variant="outline">
+                                <UserPlus className="h-4 w-4" />
+                              </Button>
+                            </DialogTrigger>
+                            <DialogContent className="max-w-2xl">
+                              <DialogHeader>
+                                <DialogTitle>Invite Team Members - {team.name}</DialogTitle>
+                              </DialogHeader>
+                              <TeamInvitationInterface team={team} layouts={layouts} />
+                            </DialogContent>
+                          </Dialog>
+                        </div>
+                      </div>
+                    </Card>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
 
-          {/* Shared Layouts */}
-          <Card className="mt-4">
+          {/* Team Invitations Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Mail className="h-4 w-4" />
+                Pending Invitations
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <TeamInvitations />
+            </CardContent>
+          </Card>
+
+          {/* Shared Layouts Section */}
+          <Card>
             <CardHeader>
               <CardTitle className="text-sm flex items-center gap-2">
                 <Share className="h-4 w-4" />
@@ -837,17 +1212,29 @@ export function ProjectManagement({ onSelectLayout, currentLayout }: ProjectMana
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                {sharedLayouts.map((share: SharedLayout) => (
-                  <div
-                    key={share.id}
-                    className="flex items-center justify-between p-2 rounded border"
-                  >
-                    <div className="text-sm">Shared Layout #{share.layoutId}</div>
-                    <Badge variant="secondary" className="text-xs">
-                      {share.permissions}
-                    </Badge>
+                {sharedLayouts.length === 0 ? (
+                  <div className="text-center py-4 text-muted-foreground">
+                    <Share className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No shared layouts yet</p>
                   </div>
-                ))}
+                ) : (
+                  sharedLayouts.map((share: SharedLayout) => (
+                    <div
+                      key={share.id}
+                      className="flex items-center justify-between p-3 rounded border bg-muted/30"
+                    >
+                      <div>
+                        <div className="text-sm font-medium">Layout #{share.layoutId}</div>
+                        <div className="text-xs text-muted-foreground">
+                          Shared {new Date(share.sharedAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">
+                        {share.permissions}
+                      </Badge>
+                    </div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>

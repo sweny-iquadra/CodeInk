@@ -67,6 +67,19 @@ export const teamMembers = pgTable("team_members", {
   joinedAt: timestamp("joined_at").defaultNow().notNull(),
 });
 
+export const teamInvitations = pgTable("team_invitations", {
+  id: serial("id").primaryKey(),
+  teamId: integer("team_id").references(() => teams.id).notNull(),
+  invitedUserId: integer("invited_user_id").references(() => users.id).notNull(),
+  invitedBy: integer("invited_by").references(() => users.id).notNull(),
+  role: text("role").notNull().default("member"),
+  status: text("status").notNull().default("pending"), // 'pending', 'accepted', 'rejected'
+  layoutId: integer("layout_id").references(() => generatedLayouts.id), // Optional: invite for specific layout
+  message: text("message"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  respondedAt: timestamp("responded_at"),
+});
+
 export const sharedLayouts = pgTable("shared_layouts", {
   id: serial("id").primaryKey(),
   layoutId: integer("layout_id").references(() => generatedLayouts.id).notNull(),
@@ -165,6 +178,25 @@ export const teamMembersRelations = relations(teamMembers, ({ one }) => ({
   }),
 }));
 
+export const teamInvitationsRelations = relations(teamInvitations, ({ one }) => ({
+  team: one(teams, {
+    fields: [teamInvitations.teamId],
+    references: [teams.id],
+  }),
+  invitedUser: one(users, {
+    fields: [teamInvitations.invitedUserId],
+    references: [users.id],
+  }),
+  invitedByUser: one(users, {
+    fields: [teamInvitations.invitedBy],
+    references: [users.id],
+  }),
+  layout: one(generatedLayouts, {
+    fields: [teamInvitations.layoutId],
+    references: [generatedLayouts.id],
+  }),
+}));
+
 export const sharedLayoutsRelations = relations(sharedLayouts, ({ one }) => ({
   layout: one(generatedLayouts, {
     fields: [sharedLayouts.layoutId],
@@ -230,6 +262,12 @@ export const insertTeamMemberSchema = createInsertSchema(teamMembers).omit({
   joinedAt: true,
 });
 
+export const insertTeamInvitationSchema = createInsertSchema(teamInvitations).omit({
+  id: true,
+  createdAt: true,
+  respondedAt: true,
+});
+
 export const insertSharedLayoutSchema = createInsertSchema(sharedLayouts).omit({
   id: true,
   sharedAt: true,
@@ -288,6 +326,19 @@ export const createVersionSchema = z.object({
   changesDescription: z.string().optional(),
 });
 
+export const inviteTeamMemberSchema = z.object({
+  teamId: z.number(),
+  invitedUserId: z.number(),
+  role: z.enum(["admin", "editor", "viewer", "member"]),
+  layoutId: z.number().optional(),
+  message: z.string().optional(),
+});
+
+export const respondToInvitationSchema = z.object({
+  invitationId: z.number(),
+  status: z.enum(["accepted", "rejected"]),
+});
+
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertLayout = z.infer<typeof insertLayoutSchema>;
@@ -302,6 +353,8 @@ export type InsertTeam = z.infer<typeof insertTeamSchema>;
 export type Team = typeof teams.$inferSelect;
 export type InsertTeamMember = z.infer<typeof insertTeamMemberSchema>;
 export type TeamMember = typeof teamMembers.$inferSelect;
+export type InsertTeamInvitation = z.infer<typeof insertTeamInvitationSchema>;
+export type TeamInvitation = typeof teamInvitations.$inferSelect;
 export type InsertSharedLayout = z.infer<typeof insertSharedLayoutSchema>;
 export type SharedLayout = typeof sharedLayouts.$inferSelect;
 export type InsertLayoutComment = z.infer<typeof insertLayoutCommentSchema>;
@@ -314,3 +367,5 @@ export type CreateTeamRequest = z.infer<typeof createTeamSchema>;
 export type ShareLayoutRequest = z.infer<typeof shareLayoutSchema>;
 export type AddCommentRequest = z.infer<typeof addCommentSchema>;
 export type CreateVersionRequest = z.infer<typeof createVersionSchema>;
+export type InviteTeamMemberRequest = z.infer<typeof inviteTeamMemberSchema>;
+export type RespondToInvitationRequest = z.infer<typeof respondToInvitationSchema>;

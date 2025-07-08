@@ -10,7 +10,9 @@ import {
   createTeamSchema,
   shareLayoutSchema,
   addCommentSchema,
-  createVersionSchema
+  createVersionSchema,
+  inviteTeamMemberSchema,
+  respondToInvitationSchema
 } from "@shared/schema";
 import multer from "multer";
 import { generateCodeFromDescription, analyzeImageAndGenerateCode, explainCode, improveLayout } from "./services/openai";
@@ -645,6 +647,77 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: unknown) {
       console.error("Error fetching team members:", error);
       res.status(500).json({ message: "Failed to fetch team members" });
+    }
+  });
+
+  // Team invitation routes
+  app.get("/api/users", authenticateToken, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // Remove password hash from response
+      const safeUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        createdAt: user.createdAt
+      }));
+      res.json(safeUsers);
+    } catch (error: unknown) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  app.post("/api/teams/invite", authenticateToken, async (req, res) => {
+    try {
+      const validatedData = inviteTeamMemberSchema.parse(req.body);
+      const invitation = await storage.createTeamInvitation({
+        ...validatedData,
+        invitedBy: req.user!.userId,
+      });
+      res.status(201).json(invitation);
+    } catch (error: unknown) {
+      console.error("Error creating team invitation:", error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create invitation" });
+    }
+  });
+
+  app.get("/api/invitations", authenticateToken, async (req, res) => {
+    try {
+      const invitations = await storage.getUserInvitations(req.user!.userId);
+      res.json(invitations);
+    } catch (error: unknown) {
+      console.error("Error fetching user invitations:", error);
+      res.status(500).json({ message: "Failed to fetch invitations" });
+    }
+  });
+
+  app.post("/api/invitations/:id/respond", authenticateToken, async (req, res) => {
+    try {
+      const invitationId = parseInt(req.params.id);
+      const { status } = respondToInvitationSchema.parse(req.body);
+      
+      const invitation = await storage.respondToInvitation(invitationId, status, req.user!.userId);
+      
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+      
+      res.json(invitation);
+    } catch (error: unknown) {
+      console.error("Error responding to invitation:", error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to respond to invitation" });
+    }
+  });
+
+  app.get("/api/teams/:teamId/invitations", authenticateToken, async (req, res) => {
+    try {
+      const teamId = parseInt(req.params.teamId);
+      const invitations = await storage.getTeamInvitations(teamId);
+      res.json(invitations);
+    } catch (error: unknown) {
+      console.error("Error fetching team invitations:", error);
+      res.status(500).json({ message: "Failed to fetch team invitations" });
     }
   });
 
