@@ -10,7 +10,9 @@ import {
   createTeamSchema,
   shareLayoutSchema,
   addCommentSchema,
-  createVersionSchema
+  createVersionSchema,
+  inviteTeamMemberSchema,
+  respondToInvitationSchema
 } from "@shared/schema";
 import multer from "multer";
 import { generateCodeFromDescription, analyzeImageAndGenerateCode, explainCode, improveLayout } from "./services/openai";
@@ -99,11 +101,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Generate code from text description (protected)
   app.post("/api/generate-from-text", authenticateToken, async (req, res) => {
     try {
-      const { description, additionalContext, isPublic, categoryId } = req.body;
-
+      const { description, additionalContext, isPublic, categoryId, layoutName } = req.body;
 
       if (!description) {
         return res.status(400).json({ message: "Description is required" });
+      }
+
+      if (!layoutName) {
+        return res.status(400).json({ message: "Layout name is required" });
+      }
+
+      // Check for duplicate layout name
+      const nameExists = await storage.checkLayoutNameExists(req.user!.userId, layoutName);
+      if (nameExists) {
+        return res.status(400).json({ message: "A layout with this name already exists. Please choose a different name." });
       }
 
       const result = await generateCodeFromDescription({
@@ -111,9 +122,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         additionalContext,
       });
 
-      // Save to storage with user association
+      // Save to storage with user association and custom name
       const layout = await storage.createLayout({
-        title: result.title,
+        title: layoutName, // Use the custom layout name instead of AI-generated title
         description: result.description,
         inputMethod: "describe",
         generatedCode: result.html,
@@ -125,7 +136,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         changesDescription: "Initial version created from text description"
       });
 
-      res.json({ ...result, id: layout.id });
+      res.json({ ...result, id: layout.id, title: layoutName });
     } catch (error: unknown) {
       console.error("Error generating code from text:", error);
       res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
@@ -139,15 +150,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Image file is required" });
       }
 
-      const { additionalContext, isPublic, categoryId } = req.body;
+      const { additionalContext, isPublic, categoryId, layoutName } = req.body;
+
+      if (!layoutName) {
+        return res.status(400).json({ message: "Layout name is required" });
+      }
+
+      // Check for duplicate layout name
+      const nameExists = await storage.checkLayoutNameExists(req.user!.userId, layoutName);
+      if (nameExists) {
+        return res.status(400).json({ message: "A layout with this name already exists. Please choose a different name." });
+      }
 
       const imageBase64 = req.file.buffer.toString("base64");
 
       const result = await analyzeImageAndGenerateCode(imageBase64, additionalContext);
 
-      // Save to storage with user association
+      // Save to storage with user association and custom name
       const layout = await storage.createLayout({
-        title: result.title,
+        title: layoutName, // Use the custom layout name instead of AI-generated title
         description: result.description,
         inputMethod: "upload",
         generatedCode: result.html,
@@ -159,7 +180,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         changesDescription: "Initial version created from uploaded image"
       });
 
-      res.json({ ...result, id: layout.id });
+      res.json({ ...result, id: layout.id, title: layoutName });
     } catch (error: unknown) {
       console.error("Error generating code from image:", error);
       res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
@@ -174,6 +195,71 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(layouts);
     } catch (error: unknown) {
       console.error("Error fetching layouts:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Get all layouts accessible to user (own + team shared)
+  app.get("/api/layouts/accessible", authenticateToken, async (req, res) => {
+    try {
+      const userId = req.user!.userId;
+      
+      // Get user's own layouts
+      const ownLayouts = await storage.getUserLayouts(userId, 100);
+      
+      // Get user's teams
+      const teams = await storage.getUserTeams(userId);
+      
+      // Get layouts shared with user's teams (from team invitations that were accepted)
+      const accessibleLayouts = new Map();
+      
+      // Add own layouts
+      ownLayouts.forEach(layout => {
+        accessibleLayouts.set(layout.id, layout);
+      });
+      
+      // Get team shared layouts through accepted invitations
+      for (const team of teams) {
+        const teamMembers = await storage.getTeamMembers(team.id);
+        const userMember = teamMembers.find(member => member.userId === userId);
+        
+        if (userMember) {
+          // User is a team member, get shared layouts for this team
+          const sharedLayouts = await storage.getSharedLayouts(userId);
+          sharedLayouts.forEach(share => {
+            if (share.sharedWithTeamId === team.id) {
+              // Fetch the actual layout
+              storage.getLayout(share.layoutId).then(layout => {
+                if (layout) {
+                  accessibleLayouts.set(layout.id, layout);
+                }
+              });
+            }
+          });
+        }
+      }
+      
+      const resultLayouts = Array.from(accessibleLayouts.values());
+      res.json(resultLayouts);
+    } catch (error: unknown) {
+      console.error("Error fetching accessible layouts:", error);
+      res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
+    }
+  });
+
+  // Get individual layout by ID (protected)
+  app.get("/api/layouts/:id", authenticateToken, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      const layout = await storage.getLayout(id);
+      
+      if (!layout) {
+        return res.status(404).json({ message: "Layout not found" });
+      }
+      
+      res.json(layout);
+    } catch (error: unknown) {
+      console.error("Error fetching layout:", error);
       res.status(500).json({ message: error instanceof Error ? error.message : "Unknown error" });
     }
   });
@@ -612,7 +698,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/teams", authenticateToken, async (req, res) => {
     try {
       const teams = await storage.getUserTeams(req.user!.userId);
-      res.json(teams);
+      // Add member count to each team
+      const teamsWithCounts = await Promise.all(
+        teams.map(async (team) => {
+          const memberCount = await storage.getTeamMemberCount(team.id);
+          return { ...team, memberCount };
+        })
+      );
+      res.json(teamsWithCounts);
     } catch (error: unknown) {
       console.error("Error fetching teams:", error);
       res.status(500).json({ message: "Failed to fetch teams" });
@@ -645,6 +738,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: unknown) {
       console.error("Error fetching team members:", error);
       res.status(500).json({ message: "Failed to fetch team members" });
+    }
+  });
+
+  // Team invitation routes
+  app.get("/api/users", authenticateToken, async (req, res) => {
+    try {
+      const users = await storage.getAllUsers();
+      // Remove password hash from response
+      const safeUsers = users.map(user => ({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        createdAt: user.createdAt
+      }));
+      res.json(safeUsers);
+    } catch (error: unknown) {
+      console.error("Error fetching users:", error);
+      res.status(500).json({ message: "Failed to fetch users" });
+    }
+  });
+
+  // Search users for autocomplete (for team invitations)
+  app.get("/api/users/search", authenticateToken, async (req, res) => {
+    try {
+      const { q: query } = req.query;
+      if (!query || typeof query !== 'string') {
+        return res.json([]);
+      }
+
+      const users = await storage.getAllUsers();
+      const searchTerm = query.toLowerCase();
+      
+      // Filter users based on username or email containing the search term
+      const filteredUsers = users
+        .filter(user => 
+          user.id !== req.user!.userId && // Exclude current user
+          (user.username.toLowerCase().includes(searchTerm) || 
+           user.email.toLowerCase().includes(searchTerm))
+        )
+        .slice(0, 5) // Limit to 5 results for performance
+        .map(user => ({
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          createdAt: user.createdAt
+        }));
+
+      res.json(filteredUsers);
+    } catch (error: unknown) {
+      console.error("Error searching users:", error);
+      res.status(500).json({ message: "Failed to search users" });
+    }
+  });
+
+  app.post("/api/teams/invite", authenticateToken, async (req, res) => {
+    try {
+      const validatedData = inviteTeamMemberSchema.parse(req.body);
+      const invitation = await storage.createTeamInvitation({
+        ...validatedData,
+        invitedBy: req.user!.userId,
+      });
+      res.status(201).json(invitation);
+    } catch (error: unknown) {
+      console.error("Error creating team invitation:", error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to create invitation" });
+    }
+  });
+
+  app.get("/api/invitations", authenticateToken, async (req, res) => {
+    try {
+      const invitations = await storage.getUserInvitations(req.user!.userId);
+      res.json(invitations);
+    } catch (error: unknown) {
+      console.error("Error fetching user invitations:", error);
+      res.status(500).json({ message: "Failed to fetch invitations" });
+    }
+  });
+
+  app.get("/api/accepted-invitations", authenticateToken, async (req, res) => {
+    try {
+      const acceptedInvitations = await storage.getUserAcceptedInvitations(req.user!.userId);
+      res.json(acceptedInvitations);
+    } catch (error: unknown) {
+      console.error("Error fetching accepted invitations:", error);
+      res.status(500).json({ message: "Failed to fetch accepted invitations" });
+    }
+  });
+
+  app.post("/api/invitations/:id/respond", authenticateToken, async (req, res) => {
+    try {
+      const invitationId = parseInt(req.params.id);
+      const { status } = respondToInvitationSchema.parse(req.body);
+      
+      const invitation = await storage.respondToInvitation(invitationId, status, req.user!.userId);
+      
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+      
+      res.json(invitation);
+    } catch (error: unknown) {
+      console.error("Error responding to invitation:", error);
+      res.status(400).json({ message: error instanceof Error ? error.message : "Failed to respond to invitation" });
+    }
+  });
+
+  app.get("/api/teams/:teamId/invitations", authenticateToken, async (req, res) => {
+    try {
+      const teamId = parseInt(req.params.teamId);
+      const invitations = await storage.getTeamInvitations(teamId);
+      res.json(invitations);
+    } catch (error: unknown) {
+      console.error("Error fetching team invitations:", error);
+      res.status(500).json({ message: "Failed to fetch team invitations" });
     }
   });
 
@@ -749,25 +956,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { q: query, categoryId, tagIds, isPublic, dateFrom, dateTo } = req.query;
       
       const filters: any = {};
-      if (categoryId && categoryId !== "undefined" && categoryId !== "null") {
+      
+      // Handle categoryId with proper validation
+      if (categoryId && categoryId !== "undefined" && categoryId !== "null" && categoryId !== "all") {
         const parsedCategoryId = parseInt(categoryId as string);
         if (!isNaN(parsedCategoryId)) {
           filters.categoryId = parsedCategoryId;
         }
       }
+      
+      // Handle tagIds array
       if (tagIds && tagIds !== "undefined" && tagIds !== "null") {
         const tagIdArray = (tagIds as string).split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
         if (tagIdArray.length > 0) {
           filters.tagIds = tagIdArray;
         }
       }
-      if (isPublic !== undefined) filters.isPublic = isPublic === 'true';
-      if (dateFrom && dateFrom !== "undefined") filters.dateFrom = new Date(dateFrom as string);
-      if (dateTo && dateTo !== "undefined") filters.dateTo = new Date(dateTo as string);
+      
+      // Handle boolean isPublic flag
+      if (isPublic !== undefined && isPublic !== "undefined") {
+        filters.isPublic = isPublic === 'true';
+      }
+      
+      // Handle date filters
+      if (dateFrom && dateFrom !== "undefined" && dateFrom !== "") {
+        filters.dateFrom = new Date(dateFrom as string);
+      }
+      if (dateTo && dateTo !== "undefined" && dateTo !== "") {
+        filters.dateTo = new Date(dateTo as string);
+      }
       
       if (!req.user?.userId || isNaN(req.user.userId)) {
+        console.error("Invalid user ID:", req.user?.userId);
         return res.status(400).json({ message: "Invalid user ID" });
       }
+      
+      console.log("Search filters:", filters);
+      console.log("User ID:", req.user.userId);
       
       const layouts = await storage.searchLayouts(req.user.userId, query as string || '', filters);
       res.json(layouts);

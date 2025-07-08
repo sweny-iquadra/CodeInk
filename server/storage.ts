@@ -6,6 +6,7 @@ import {
   layoutTags,
   teams,
   teamMembers,
+  teamInvitations,
   sharedLayouts,
   layoutComments,
   type User, 
@@ -22,13 +23,15 @@ import {
   type InsertTeam,
   type TeamMember,
   type InsertTeamMember,
+  type TeamInvitation,
+  type InsertTeamInvitation,
   type SharedLayout,
   type InsertSharedLayout,
   type LayoutComment,
   type InsertLayoutComment
 } from "@shared/schema";
 import { db } from "./db";
-import { eq, desc, and, or, inArray } from "drizzle-orm";
+import { eq, desc, asc, and, or, inArray, isNotNull } from "drizzle-orm";
 
 export interface IStorage {
   // User management
@@ -44,6 +47,7 @@ export interface IStorage {
   getPublicLayouts(limit?: number): Promise<GeneratedLayout[]>;
   getLayout(id: number): Promise<GeneratedLayout | undefined>;
   updateLayoutVisibility(id: number, isPublic: boolean, userId: number): Promise<GeneratedLayout | undefined>;
+  checkLayoutNameExists(userId: number, name: string): Promise<boolean>;
   
   // Category management
   createCategory(category: InsertCategory): Promise<Category>;
@@ -72,7 +76,16 @@ export interface IStorage {
   addTeamMember(teamMember: InsertTeamMember): Promise<TeamMember>;
   removeTeamMember(teamId: number, userId: number): Promise<boolean>;
   getTeamMembers(teamId: number): Promise<TeamMember[]>;
+  getTeamMemberCount(teamId: number): Promise<number>;
   updateTeamMemberRole(teamId: number, userId: number, role: string): Promise<TeamMember | undefined>;
+  
+  // Team invitations
+  createTeamInvitation(invitation: InsertTeamInvitation): Promise<TeamInvitation>;
+  getUserInvitations(userId: number): Promise<TeamInvitation[]>;
+  getUserAcceptedInvitations(userId: number): Promise<TeamInvitation[]>;
+  respondToInvitation(invitationId: number, status: string, userId: number): Promise<TeamInvitation | undefined>;
+  getTeamInvitations(teamId: number): Promise<TeamInvitation[]>;
+  getAllUsers(): Promise<User[]>; // For user search during invitations
   
   // Sharing and collaboration
   shareLayout(share: InsertSharedLayout): Promise<SharedLayout>;
@@ -215,6 +228,18 @@ export class DatabaseStorage implements IStorage {
       .where(eq(generatedLayouts.id, id))
       .returning();
     return layout || undefined;
+  }
+
+  async checkLayoutNameExists(userId: number, name: string): Promise<boolean> {
+    const [layout] = await db
+      .select({ id: generatedLayouts.id })
+      .from(generatedLayouts)
+      .where(and(
+        eq(generatedLayouts.userId, userId),
+        eq(generatedLayouts.title, name)
+      ))
+      .limit(1);
+    return !!layout;
   }
 
   // Category management methods
@@ -419,7 +444,10 @@ export class DatabaseStorage implements IStorage {
       .select()
       .from(generatedLayouts)
       .where(or(eq(generatedLayouts.id, parentId), eq(generatedLayouts.parentLayoutId, parentId)))
-      .orderBy(desc(generatedLayouts.createdAt));
+      .orderBy(asc(generatedLayouts.createdAt)); // Changed to ascending order to show v1.0 first, then v1.1
+    
+    console.log(`getLayoutVersionHistory for layout ${layoutId}, parentId ${parentId}, found versions:`, 
+      allVersions.map(v => `ID ${v.id} ${v.versionNumber}`));
     return allVersions;
   }
 
@@ -429,6 +457,16 @@ export class DatabaseStorage implements IStorage {
       .insert(teams)
       .values(insertTeam)
       .returning();
+    
+    // Automatically add the creator as an admin member
+    await db
+      .insert(teamMembers)
+      .values({
+        teamId: team.id,
+        userId: team.createdBy,
+        role: "admin"
+      });
+    
     return team;
   }
 
@@ -480,6 +518,14 @@ export class DatabaseStorage implements IStorage {
     return members;
   }
 
+  async getTeamMemberCount(teamId: number): Promise<number> {
+    const result = await db
+      .select({ count: teamMembers.id })
+      .from(teamMembers)
+      .where(eq(teamMembers.teamId, teamId));
+    return result.length;
+  }
+
   async updateTeamMemberRole(teamId: number, userId: number, role: string): Promise<TeamMember | undefined> {
     const [member] = await db
       .update(teamMembers)
@@ -487,6 +533,115 @@ export class DatabaseStorage implements IStorage {
       .where(and(eq(teamMembers.teamId, teamId), eq(teamMembers.userId, userId)))
       .returning();
     return member || undefined;
+  }
+
+  // Team invitation methods
+  async createTeamInvitation(insertInvitation: InsertTeamInvitation): Promise<TeamInvitation> {
+    const [invitation] = await db
+      .insert(teamInvitations)
+      .values(insertInvitation)
+      .returning();
+    return invitation;
+  }
+
+  async getUserInvitations(userId: number): Promise<TeamInvitation[]> {
+    const invitations = await db
+      .select({
+        id: teamInvitations.id,
+        teamId: teamInvitations.teamId,
+        invitedUserId: teamInvitations.invitedUserId,
+        invitedBy: teamInvitations.invitedBy,
+        role: teamInvitations.role,
+        status: teamInvitations.status,
+        layoutId: teamInvitations.layoutId,
+        message: teamInvitations.message,
+        createdAt: teamInvitations.createdAt,
+        respondedAt: teamInvitations.respondedAt,
+        inviterUsername: users.username,
+        layoutTitle: generatedLayouts.title,
+        teamName: teams.name
+      })
+      .from(teamInvitations)
+      .leftJoin(users, eq(teamInvitations.invitedBy, users.id))
+      .leftJoin(generatedLayouts, eq(teamInvitations.layoutId, generatedLayouts.id))
+      .leftJoin(teams, eq(teamInvitations.teamId, teams.id))
+      .where(and(eq(teamInvitations.invitedUserId, userId), eq(teamInvitations.status, "pending")))
+      .orderBy(desc(teamInvitations.createdAt));
+    return invitations as TeamInvitation[];
+  }
+
+  async getUserAcceptedInvitations(userId: number): Promise<TeamInvitation[]> {
+    const acceptedInvitations = await db
+      .select({
+        id: teamInvitations.id,
+        teamId: teamInvitations.teamId,
+        invitedUserId: teamInvitations.invitedUserId,
+        invitedBy: teamInvitations.invitedBy,
+        role: teamInvitations.role,
+        status: teamInvitations.status,
+        layoutId: teamInvitations.layoutId,
+        message: teamInvitations.message,
+        createdAt: teamInvitations.createdAt,
+        respondedAt: teamInvitations.respondedAt,
+        inviterUsername: users.username,
+        layoutTitle: generatedLayouts.title,
+        teamName: teams.name
+      })
+      .from(teamInvitations)
+      .leftJoin(users, eq(teamInvitations.invitedBy, users.id))
+      .leftJoin(generatedLayouts, eq(teamInvitations.layoutId, generatedLayouts.id))
+      .leftJoin(teams, eq(teamInvitations.teamId, teams.id))
+      .where(and(
+        eq(teamInvitations.invitedUserId, userId), 
+        eq(teamInvitations.status, "accepted"),
+        isNotNull(teamInvitations.layoutId) // Only invitations with layout assignments
+      ))
+      .orderBy(desc(teamInvitations.respondedAt));
+    return acceptedInvitations as TeamInvitation[];
+  }
+
+  async respondToInvitation(invitationId: number, status: string, userId: number): Promise<TeamInvitation | undefined> {
+    const [invitation] = await db
+      .update(teamInvitations)
+      .set({ 
+        status, 
+        respondedAt: new Date() 
+      })
+      .where(and(eq(teamInvitations.id, invitationId), eq(teamInvitations.invitedUserId, userId)))
+      .returning();
+    
+    // If accepted, add user to team
+    if (status === "accepted" && invitation) {
+      await this.addTeamMember({
+        teamId: invitation.teamId,
+        userId: invitation.invitedUserId,
+        role: invitation.role
+      });
+    }
+    
+    return invitation || undefined;
+  }
+
+  async getTeamInvitations(teamId: number): Promise<TeamInvitation[]> {
+    const invitations = await db
+      .select()
+      .from(teamInvitations)
+      .where(eq(teamInvitations.teamId, teamId))
+      .orderBy(desc(teamInvitations.createdAt));
+    return invitations;
+  }
+
+  async getAllUsers(): Promise<User[]> {
+    const allUsers = await db
+      .select({
+        id: users.id,
+        username: users.username,
+        email: users.email,
+        createdAt: users.createdAt
+      })
+      .from(users)
+      .orderBy(users.username);
+    return allUsers;
   }
 
   // Sharing and collaboration methods
@@ -499,6 +654,12 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getSharedLayouts(userId: number): Promise<SharedLayout[]> {
+    // Validate userId to prevent NaN errors
+    if (!userId || isNaN(userId) || userId <= 0) {
+      console.error("Invalid userId provided to getSharedLayouts:", userId);
+      return [];
+    }
+    
     const shared = await db
       .select()
       .from(sharedLayouts)
@@ -565,6 +726,13 @@ export class DatabaseStorage implements IStorage {
     dateFrom?: Date;
     dateTo?: Date;
   }): Promise<GeneratedLayout[]> {
+    console.log("searchLayouts called with userId:", userId, "type:", typeof userId);
+    
+    if (!userId || isNaN(userId)) {
+      console.error("Invalid userId passed to searchLayouts:", userId);
+      throw new Error("Invalid user ID");
+    }
+    
     let whereClause = eq(generatedLayouts.userId, userId);
 
     if (filters?.categoryId) {

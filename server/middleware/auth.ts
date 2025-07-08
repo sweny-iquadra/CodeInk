@@ -21,6 +21,7 @@ export async function authenticateToken(req: Request, res: Response, next: NextF
         }
 
         const decoded = await authService.validateToken(token);
+        console.log("Auth middleware - decoded token:", decoded);
         req.user = decoded;
         next();
     } catch (error) {

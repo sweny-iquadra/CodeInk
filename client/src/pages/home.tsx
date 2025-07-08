@@ -31,12 +31,13 @@ export default function Home() {
   const [abortController, setAbortController] = useState<AbortController | null>(null);
   const [outputTab, setOutputTab] = useState("code");
   const [selectedLayoutForManagement, setSelectedLayoutForManagement] = useState<GeneratedLayout | undefined>(undefined);
+  const [projectManagementTab, setProjectManagementTab] = useState("organization");
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
   const generateFromTextMutation = useMutation({
 
-    mutationFn: async ({ description, additionalContext, isPublic, categoryId }: { description: string; additionalContext?: string; isPublic?: boolean; categoryId?: number }) => {
+    mutationFn: async ({ description, additionalContext, isPublic, categoryId, layoutName }: { description: string; additionalContext?: string; isPublic?: boolean; categoryId?: number; layoutName: string }) => {
 
       const controller = new AbortController();
       setAbortController(controller);
@@ -46,6 +47,7 @@ export default function Home() {
         additionalContext,
         isPublic: isPublic || false,
         categoryId,
+        layoutName,
       }, controller.signal);
       return response.json();
     },
@@ -81,7 +83,7 @@ export default function Home() {
 
   const generateFromImageMutation = useMutation({
 
-    mutationFn: async ({ file, additionalContext, isPublic, categoryId }: { file: File; additionalContext?: string; isPublic?: boolean; categoryId?: number }) => {
+    mutationFn: async ({ file, additionalContext, isPublic, categoryId, layoutName }: { file: File; additionalContext?: string; isPublic?: boolean; categoryId?: number; layoutName: string }) => {
       const controller = new AbortController();
       setAbortController(controller);
       
@@ -94,8 +96,8 @@ export default function Home() {
       formData.append("isPublic", String(isPublic || false));
       if (categoryId) {
         formData.append("categoryId", String(categoryId));
-
       }
+      formData.append("layoutName", layoutName);
 
       // Use authenticated fetch with JWT token for file uploads
       const accessToken = localStorage.getItem("auth_token");
@@ -200,22 +202,23 @@ export default function Home() {
     file?: File;
     isPublic?: boolean;
     categoryId?: number;
-
+    layoutName?: string;
   }) => {
-    if (data.type === 'text' && data.description) {
+    if (data.type === 'text' && data.description && data.layoutName) {
       generateFromTextMutation.mutate({
         description: data.description,
         additionalContext: data.additionalContext,
         isPublic: data.isPublic,
         categoryId: data.categoryId,
+        layoutName: data.layoutName,
       });
-    } else if (data.type === 'image' && data.file) {
+    } else if (data.type === 'image' && data.file && data.layoutName) {
       generateFromImageMutation.mutate({
         file: data.file,
         additionalContext: data.additionalContext,
         isPublic: data.isPublic,
         categoryId: data.categoryId,
-
+        layoutName: data.layoutName,
       });
     }
   };
@@ -234,10 +237,20 @@ export default function Home() {
   };
 
   const handleSelectLayoutForManagement = (layout: GeneratedLayout) => {
+    console.log("handleSelectLayoutForManagement called with layout:", layout.id, layout.versionNumber);
+    console.log("Layout generatedCode preview:", layout.generatedCode?.substring(0, 200));
+    console.log("Current code before update:", currentCode?.substring(0, 100));
     setSelectedLayoutForManagement(layout);
+    // Also update the code editor to show the selected layout
+    setCurrentCode(layout.generatedCode);
+    setCurrentTitle(layout.title);
+    setCurrentLayoutId(layout.id);
+    setIsReady(true);
+    setOutputTab("preview"); // Auto-switch to preview when selecting layout
+    console.log("Code updated to:", layout.generatedCode?.substring(0, 100));
     toast({
       title: "Layout selected",
-      description: `Selected "${layout.title}" for project management.`,
+      description: `Selected "${layout.title}" (${layout.versionNumber || 'Original'}) for project management.`,
     });
   };
 
@@ -351,15 +364,14 @@ export default function Home() {
           </TabsContent>
           
           <TabsContent value="manage">
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-              <div className="lg:col-span-4">
+            {projectManagementTab === "search" ? (
+              <div className="space-y-8">
                 <ProjectManagement 
                   onSelectLayout={handleSelectLayoutForManagement}
                   currentLayout={selectedLayoutForManagement}
+                  defaultTab={projectManagementTab}
+                  onTabChange={setProjectManagementTab}
                 />
-              </div>
-              
-              <div className="lg:col-span-8">
                 <OutputPanel 
                   generatedCode={selectedLayoutForManagement?.generatedCode || currentCode}
                   title={selectedLayoutForManagement?.title || currentTitle}
@@ -368,9 +380,56 @@ export default function Home() {
                   activeTab={outputTab}
                   onTabChange={setOutputTab}
                   currentLayoutId={selectedLayoutForManagement?.id || currentLayoutId}
+                  userRole={selectedLayoutForManagement?.sharedRole}
+                  onCodeChange={(code) => {
+                    if (selectedLayoutForManagement) {
+                      setSelectedLayoutForManagement({
+                        ...selectedLayoutForManagement,
+                        generatedCode: code
+                      });
+                    } else {
+                      setCurrentCode(code);
+                    }
+                  }}
                 />
               </div>
-            </div>
+            ) : (
+              <div className={`grid ${projectManagementTab === "collaborate" ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-12"} gap-8`}>
+                <div className={projectManagementTab === "collaborate" ? "w-full" : "lg:col-span-4"}>
+                  <ProjectManagement 
+                    onSelectLayout={handleSelectLayoutForManagement}
+                    currentLayout={selectedLayoutForManagement}
+                    defaultTab={projectManagementTab}
+                    onTabChange={setProjectManagementTab}
+                  />
+                </div>
+                
+                {projectManagementTab !== "collaborate" && (
+                  <div className="lg:col-span-8">
+                    <OutputPanel 
+                      generatedCode={selectedLayoutForManagement?.generatedCode || currentCode}
+                      title={selectedLayoutForManagement?.title || currentTitle}
+                      isReady={!!(selectedLayoutForManagement || isReady)}
+                      onLayoutImproved={handleLayoutImproved}
+                      activeTab={outputTab}
+                      onTabChange={setOutputTab}
+                      currentLayoutId={selectedLayoutForManagement?.id || currentLayoutId}
+                      userRole={selectedLayoutForManagement?.sharedRole}
+                      onCodeChange={(code) => {
+                        if (selectedLayoutForManagement) {
+                          setSelectedLayoutForManagement({
+                            ...selectedLayoutForManagement,
+                            generatedCode: code
+                          });
+                        } else {
+                          setCurrentCode(code);
+                        }
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            )}
           </TabsContent>
         </Tabs>
       </div>

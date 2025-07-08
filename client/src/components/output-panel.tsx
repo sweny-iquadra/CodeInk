@@ -31,9 +31,11 @@ interface OutputPanelProps {
   activeTab?: string;
   onTabChange?: (tab: string) => void;
   currentLayoutId?: number;
+  userRole?: string; // 'viewer', 'editor', 'admin', or undefined for own layouts
+  onCodeChange?: (code: string) => void;
 }
 
-export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutImproved, activeTab, onTabChange, currentLayoutId }: OutputPanelProps) {
+export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutImproved, activeTab, onTabChange, currentLayoutId, userRole, onCodeChange }: OutputPanelProps) {
   const [activeView, setActiveView] = useState("code");
   
   // Use external activeTab if provided, otherwise use internal state
@@ -50,8 +52,26 @@ export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutI
   const [explanation, setExplanation] = useState("");
   const [improvementFeedback, setImprovementFeedback] = useState("");
   const [showImprovementDialog, setShowImprovementDialog] = useState(false);
+  const [editableCode, setEditableCode] = useState(generatedCode);
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const { toast } = useToast();
+
+  // Determine if user can edit this layout
+  const canEdit = !userRole || userRole === 'editor' || userRole === 'admin';
+  const isViewOnly = userRole === 'viewer';
+
+  // Update editable code when generatedCode changes
+  useEffect(() => {
+    setEditableCode(generatedCode);
+  }, [generatedCode]);
+
+  // Handle code changes for editable textarea
+  const handleCodeChange = (newCode: string) => {
+    setEditableCode(newCode);
+    if (onCodeChange) {
+      onCodeChange(newCode);
+    }
+  };
 
   // Handle iframe link clicks to prevent navigation away from Codink
   useEffect(() => {
@@ -283,9 +303,27 @@ export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutI
                 </div>
               </div>
               
-              <div className="bg-slate-900 text-slate-300 font-mono text-sm overflow-auto h-[600px]">
+              <div className="bg-slate-900 text-slate-300 font-mono text-sm overflow-auto h-[600px] relative">
                 {generatedCode ? (
-                  <pre className="p-4 whitespace-pre-wrap">{generatedCode}</pre>
+                  <>
+                    {isViewOnly && (
+                      <div className="absolute top-2 right-2 z-10">
+                        <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">
+                          👁️ View Only
+                        </Badge>
+                      </div>
+                    )}
+                    {canEdit ? (
+                      <Textarea
+                        value={editableCode}
+                        onChange={(e) => handleCodeChange(e.target.value)}
+                        className="w-full h-full p-4 bg-slate-900 text-slate-300 font-mono text-sm border-none resize-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Edit your HTML code here..."
+                      />
+                    ) : (
+                      <pre className="p-4 whitespace-pre-wrap">{generatedCode}</pre>
+                    )}
+                  </>
                 ) : (
                   <div className="flex items-center justify-center h-full text-slate-500">
                     <div className="text-center">
@@ -341,12 +379,12 @@ export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutI
               </div>
               
               <div className="flex justify-center bg-slate-100 p-4 h-[600px]">
-                {generatedCode ? (
+                {editableCode ? (
                   <iframe
                     ref={iframeRef}
                     className="bg-white border border-slate-300 rounded"
                     style={{ width: getPreviewWidth(), height: "100%" }}
-                    srcDoc={generatedCode}
+                    srcDoc={editableCode}
                     title="Preview"
                     sandbox="allow-scripts allow-same-origin"
                   />
@@ -372,7 +410,8 @@ export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutI
               <Button 
                 variant="outline" 
                 onClick={handleExplain}
-                disabled={!generatedCode || explainMutation.isPending}
+                disabled={!generatedCode || explainMutation.isPending || isViewOnly}
+                title={isViewOnly ? "View-only users cannot explain code" : ""}
               >
                 <Lightbulb className="w-4 h-4 mr-2 text-yellow-500" />
                 {explainMutation.isPending ? "Explaining..." : "Explain Code"}
@@ -380,21 +419,27 @@ export function OutputPanel({ generatedCode = "", title = "", isReady, onLayoutI
               <Button 
                 variant="outline" 
                 onClick={handleImprove}
-                disabled={!generatedCode || improveMutation.isPending}
+                disabled={!generatedCode || improveMutation.isPending || isViewOnly}
+                title={isViewOnly ? "View-only users cannot suggest improvements" : ""}
               >
                 <Wand2 className="w-4 h-4 mr-2 text-purple-500" />
                 {improveMutation.isPending ? "Improving..." : "Suggest Improvements"}
               </Button>
             </div>
             <div className="flex items-center space-x-2">
-              <Button variant="outline" disabled={!generatedCode}>
+              <Button 
+                variant="outline" 
+                disabled={!generatedCode || isViewOnly}
+                title={isViewOnly ? "View-only users cannot save layouts" : ""}
+              >
                 <Save className="w-4 h-4 mr-2" />
                 Save
               </Button>
               <Button 
                 className="bg-blue-600 hover:bg-blue-700"
                 onClick={handleDownload}
-                disabled={!generatedCode}
+                disabled={!generatedCode || isViewOnly}
+                title={isViewOnly ? "View-only users cannot export layouts" : ""}
               >
                 <Download className="w-4 h-4 mr-2" />
                 Export
