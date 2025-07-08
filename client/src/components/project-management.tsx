@@ -629,10 +629,20 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
   };
   const [inviteDialog, setInviteDialog] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<number | null>(null);
   const [selectedTags, setSelectedTags] = useState<number[]>([]);
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
   const [selectedLayout, setSelectedLayout] = useState<number | null>(null);
   const [viewingCategoryId, setViewingCategoryId] = useState<number | null>(null);
   const [addTagDialog, setAddTagDialog] = useState(false);
@@ -769,19 +779,22 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
   // Ensure currentLayoutTags is always an array for safety
   const safeCurrentLayoutTags = Array.isArray(currentLayoutTags) ? currentLayoutTags : [];
 
-  const { data: searchResults = [] } = useQuery({
-    queryKey: ["/api/layouts/search", searchQuery, selectedCategory, selectedTags, dateFrom, dateTo],
-    queryFn: () => {
+  // Auto-search with all filters
+  const { data: searchResults = [] } = useQuery<GeneratedLayout[]>({
+    queryKey: ["/api/layouts/search", debouncedSearchQuery, selectedCategory, selectedTags, dateFrom, dateTo],
+    queryFn: async () => {
       const params = new URLSearchParams();
-      if (searchQuery) params.append("q", searchQuery);
-      if (selectedCategory) params.append("categoryId", selectedCategory.toString());
+      if (debouncedSearchQuery) params.append("q", debouncedSearchQuery);
+      if (selectedCategory && selectedCategory !== null) params.append("categoryId", selectedCategory.toString());
       if (selectedTags.length > 0) params.append("tagIds", selectedTags.join(","));
       if (dateFrom) params.append("dateFrom", dateFrom);
       if (dateTo) params.append("dateTo", dateTo);
       
-      return apiRequest("GET", `/api/layouts/search?${params.toString()}`);
+      const response = await apiRequest("GET", `/api/layouts/search?${params.toString()}`);
+      return response.json();
     },
-    enabled: !!(searchQuery || selectedCategory || selectedTags.length > 0)
+    enabled: true, // Always enable to allow filtering even without search text
+    staleTime: 300, // Cache for 300ms to avoid excessive requests
   });
 
 
@@ -1715,6 +1728,7 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                 size="sm"
                 onClick={() => {
                   setSearchQuery("");
+                  setDebouncedSearchQuery("");
                   setSelectedCategory(null);
                   setSelectedTags([]);
                   setDateFrom("");

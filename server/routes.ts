@@ -956,25 +956,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const { q: query, categoryId, tagIds, isPublic, dateFrom, dateTo } = req.query;
       
       const filters: any = {};
-      if (categoryId && categoryId !== "undefined" && categoryId !== "null") {
+      
+      // Handle categoryId with proper validation
+      if (categoryId && categoryId !== "undefined" && categoryId !== "null" && categoryId !== "all") {
         const parsedCategoryId = parseInt(categoryId as string);
         if (!isNaN(parsedCategoryId)) {
           filters.categoryId = parsedCategoryId;
         }
       }
+      
+      // Handle tagIds array
       if (tagIds && tagIds !== "undefined" && tagIds !== "null") {
         const tagIdArray = (tagIds as string).split(',').map(id => parseInt(id)).filter(id => !isNaN(id));
         if (tagIdArray.length > 0) {
           filters.tagIds = tagIdArray;
         }
       }
-      if (isPublic !== undefined) filters.isPublic = isPublic === 'true';
-      if (dateFrom && dateFrom !== "undefined") filters.dateFrom = new Date(dateFrom as string);
-      if (dateTo && dateTo !== "undefined") filters.dateTo = new Date(dateTo as string);
+      
+      // Handle boolean isPublic flag
+      if (isPublic !== undefined && isPublic !== "undefined") {
+        filters.isPublic = isPublic === 'true';
+      }
+      
+      // Handle date filters
+      if (dateFrom && dateFrom !== "undefined" && dateFrom !== "") {
+        filters.dateFrom = new Date(dateFrom as string);
+      }
+      if (dateTo && dateTo !== "undefined" && dateTo !== "") {
+        filters.dateTo = new Date(dateTo as string);
+      }
       
       if (!req.user?.userId || isNaN(req.user.userId)) {
+        console.error("Invalid user ID:", req.user?.userId);
         return res.status(400).json({ message: "Invalid user ID" });
       }
+      
+      console.log("Search filters:", filters);
+      console.log("User ID:", req.user.userId);
       
       const layouts = await storage.searchLayouts(req.user.userId, query as string || '', filters);
       res.json(layouts);
