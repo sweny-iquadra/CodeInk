@@ -1410,7 +1410,11 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
                         <div
                           key={version.id}
                           className="flex items-center justify-between p-3 border rounded cursor-pointer hover:bg-accent transition-colors"
-                          onClick={() => onSelectLayout(version)}
+                          onClick={() => {
+                            console.log("Version clicked:", version.id, "versionNumber:", version.versionNumber);
+                            console.log("Version generatedCode preview:", version.generatedCode?.substring(0, 200));
+                            onSelectLayout(version);
+                          }}
                         >
                           <div className="flex-1">
                             <div className="font-medium text-sm flex items-center gap-2">

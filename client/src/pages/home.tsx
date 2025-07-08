@@ -237,6 +237,8 @@ export default function Home() {
   };
 
   const handleSelectLayoutForManagement = (layout: GeneratedLayout) => {
+    console.log("handleSelectLayoutForManagement called with layout:", layout.id, layout.versionNumber);
+    console.log("Layout generatedCode preview:", layout.generatedCode?.substring(0, 200));
     setSelectedLayoutForManagement(layout);
     // Also update the code editor to show the selected layout
     setCurrentCode(layout.generatedCode);
@@ -246,7 +248,7 @@ export default function Home() {
     setOutputTab("preview"); // Auto-switch to preview when selecting layout
     toast({
       title: "Layout selected",
-      description: `Selected "${layout.title}" for project management.`,
+      description: `Selected "${layout.title}" (${layout.versionNumber || 'Original'}) for project management.`,
     });
   };
 
