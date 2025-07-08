@@ -668,6 +668,9 @@ export function ProjectManagement({ onSelectLayout, currentLayout, defaultTab = 
     staleTime: 5000
   });
 
+  // Debug: log teams data to see what we're getting
+  console.log("Teams data:", teams);
+
   // Query for accepted invitations to get shared layouts with permissions
   const { data: acceptedInvitations = [] } = useQuery({
     queryKey: ["/api/accepted-invitations"],
