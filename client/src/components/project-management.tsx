@@ -76,7 +76,7 @@ function TeamInvitationInterface({ team, layouts, onClose }: { team: Team; layou
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [selectedRole, setSelectedRole] = useState<string>("member");
   const [selectedLayout, setSelectedLayout] = useState<GeneratedLayout | null>(null);
-  const [selectedVersion, setSelectedVersion] = useState<GeneratedLayout | null>(null);
+
   const [message, setMessage] = useState("");
   const [userSearch, setUserSearch] = useState("");
   const [userComboOpen, setUserComboOpen] = useState(false);
@@ -153,7 +153,7 @@ function TeamInvitationInterface({ team, layouts, onClose }: { team: Team; layou
       teamId: team.id,
       invitedUserId: selectedUser.id,
       role: selectedRole,
-      layoutId: selectedVersion?.id || selectedLayout.id,
+      layoutId: selectedLayout.id,
       message: message.trim() || undefined
     };
 
@@ -236,7 +236,6 @@ function TeamInvitationInterface({ team, layouts, onClose }: { team: Team; layou
           onValueChange={(value) => {
             const layout = layouts.find(l => l.id.toString() === value);
             setSelectedLayout(layout || null);
-            setSelectedVersion(null);
           }}
         >
           <SelectTrigger>
@@ -259,48 +258,17 @@ function TeamInvitationInterface({ team, layouts, onClose }: { team: Team; layou
         </Select>
       </div>
 
-      {/* Version Selection */}
-      {selectedLayout && (
-        <div className="space-y-2">
-          <Label>Select Version</Label>
-          <Select 
-            value={selectedVersion?.id?.toString() || selectedLayout?.id?.toString() || "none"} 
-            onValueChange={(value) => {
-              if (value === selectedLayout?.id?.toString()) {
-                setSelectedVersion(null);
-              } else {
-                const version = layoutVersions.find(v => v.id.toString() === value);
-                setSelectedVersion(version || null);
-              }
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="Select version" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value={selectedLayout.id.toString()}>
-                Original - {selectedLayout.title}
-              </SelectItem>
-              {layoutVersions.map((version: GeneratedLayout) => (
-                <SelectItem key={version.id} value={version.id.toString()}>
-                  v{version.versionNumber} - {version.title}
-                  {version.changesDescription && ` (${version.changesDescription})`}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+
 
       {/* Auto-bind Categories and Tags Info */}
-      {(selectedVersion || selectedLayout) && (
+      {selectedLayout && (
         <div className="p-3 bg-muted/30 rounded-md">
           <div className="text-sm font-medium mb-2">Layout Details:</div>
           <div className="space-y-1 text-xs text-muted-foreground">
-            <div>Title: {(selectedVersion || selectedLayout)?.title}</div>
-            <div>Description: {(selectedVersion || selectedLayout)?.description || "No description"}</div>
-            {(selectedVersion || selectedLayout)?.categoryId && (
-              <div>Category: {categories.find(c => c.id === (selectedVersion || selectedLayout)?.categoryId)?.name || "Unknown"}</div>
+            <div>Title: {selectedLayout.title}</div>
+            <div>Description: {selectedLayout.description || "No description"}</div>
+            {selectedLayout.categoryId && (
+              <div>Category: {categories.find(c => c.id === selectedLayout.categoryId)?.name || "Unknown"}</div>
             )}
             <div>Categories and tags will be automatically available to the team member.</div>
           </div>
