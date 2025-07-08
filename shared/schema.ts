@@ -341,7 +341,10 @@ export const respondToInvitationSchema = z.object({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 export type InsertLayout = z.infer<typeof insertLayoutSchema>;
-export type GeneratedLayout = typeof generatedLayouts.$inferSelect;
+export type GeneratedLayout = typeof generatedLayouts.$inferSelect & {
+  sharedRole?: string; // 'viewer', 'editor', 'admin' when layout is shared from team
+  sharedTeamName?: string; // Team name when layout is shared
+};
 export type InsertCategory = z.infer<typeof insertCategorySchema>;
 export type Category = typeof categories.$inferSelect;
 export type InsertTag = z.infer<typeof insertTagSchema>;

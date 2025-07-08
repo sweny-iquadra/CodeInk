@@ -370,6 +370,17 @@ export default function Home() {
                   activeTab={outputTab}
                   onTabChange={setOutputTab}
                   currentLayoutId={selectedLayoutForManagement?.id || currentLayoutId}
+                  userRole={selectedLayoutForManagement?.sharedRole}
+                  onCodeChange={(code) => {
+                    if (selectedLayoutForManagement) {
+                      setSelectedLayoutForManagement({
+                        ...selectedLayoutForManagement,
+                        generatedCode: code
+                      });
+                    } else {
+                      setCurrentCode(code);
+                    }
+                  }}
                 />
               </div>
             </div>
