@@ -335,7 +335,6 @@ export const inviteTeamMemberSchema = z.object({
 });
 
 export const respondToInvitationSchema = z.object({
-  invitationId: z.number(),
   status: z.enum(["accepted", "rejected"]),
 });
 
